@@ -1,0 +1,4 @@
+如果是第一次则需要上传这个目录的所有文件，然后构建
+第二次可以指定你自己的仓库的镜像
+
+CornerstoneBizSystem.jaz、CornerstoneWebSystem.war、cshome.tar.gz三个文件自己去官方的项目下载：https://github.com/informat365/Cornerstone/releases/tag/v72

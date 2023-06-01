@@ -1,0 +1,91 @@
+version: '3.6'
+
+services:
+
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    container_name: 'gitlab'
+    restart: always
+    shm_size: '1g'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://172.16.0.15:8929'
+        nginx['listen_port'] = 8929
+        gitlab_rails['gitlab_ssh_host'] = '172.16.0.15'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2224
+        
+        redis['enable'] = true
+        redis['host'] = '172.16.0.15'
+        redis['port'] = '6379'
+        redis['password'] = 'pNlisJTYYf4'
+        redis['database'] = 0
+        
+        postgresql['enable'] = true
+        postgresql['host'] = 'postgresql.example.com'
+        postgresql['port'] = '5432'
+        nginx['enable'] = true
+        nginx['client_max_body_size'] = '500m'
+        sidekiq['enable'] = true
+        sidekiq['concurrency'] = '10'
+        prometheus_monitoring['enable'] = true
+        grafana['enable'] = true
+    ports:
+      - "443:443"
+      - '8929:8929'
+      - '2224:22'
+    volumes:
+      - ./gitlab/config:/etc/gitlab
+      - ./gitlab/logs:/var/log/gitlab
+      - ./gitlab/data:/var/opt/gitlab
+    depends_on:
+      - redis
+      - postgresql
+      - prometheus
+      - grafana
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    privileged: true
+    restart: always
+    ports:
+      - 6379:6379
+    command:
+      -- requirepass "pNlisJTYYf4"
+      -- bind "0.0.0.0"
+      -- protected-mode "no"
+      -- appendonly "yes"
+      -- databases 5
+      -- aclfile "/etc/redis/users.acl"
+    volumes:
+      - ./redis/data:/data
+      - ./redis/aclfile:/etc/redis/users.acl
+
+  postgresql:
+    image: postgres:13.8
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: gitlab
+      POSTGRES_PASSWORD: ePVw#DD#q
+      POSTGRES_DB: gitlabhq_production
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+
+  prometheus:
+    image: prom/prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - /srv/prometheus:/prometheus
+
+  grafana:
+    image: grafana/grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - /srv/grafana:/var/lib/grafana

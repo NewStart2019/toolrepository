@@ -1,0 +1,24 @@
+
+version: '3.6'
+
+services:
+  collabora_local:
+    image: collabora/code
+    container_name: collabora_code_local
+    restart: always
+    privileged: true
+    environment:
+      - domain=172.16.0.170 # 替换为您的域名
+      #- domain2=172.16.0.170      
+      - username=admin # 替换为管理员用户名
+      - password=123456 # 替换为管理员密码
+      - extra_params=--o:ui.tabs=true # 启用用户界面选项卡模式
+      - extra_params=--o:ssl.enable=false  # 关闭 SSL/TLS      
+    ports:
+      - "9981:9980"
+    volumes:
+      - /root/collabora_local/office:/var/lib/lool/child-roots/
+      - /root/collabora_local/loolwsd:/etc/loolwsd/
+      - /root/collabora_local/config:/config
+
+# docker run -t -d -p 9980:9980 -e "domain=172.16.0.15" -e "username=admin" -e "password=123456"  -e "extra_params=--o:ssl.enable=false" collabora/code

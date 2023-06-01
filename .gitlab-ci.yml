@@ -1,0 +1,85 @@
+stages:
+  - build
+  - test
+  - prod
+
+maven_docker_build:
+  variables:
+    BASE_PATH: "/k8s/code"
+  stage: build
+  tags:
+    - runner-vm
+  when: manual
+  script:
+    - docker run --rm -i --net=host  -v $BASE_PATH/.m2:/root/.m2 -v $CI_PROJECT_DIR:$CI_PROJECT_DIR -w $CI_PROJECT_DIR maven:3.3.9-jdk-8 -- bash -c "mvn clean && mvn package -Dmaven.test.skip=true"
+    - BUILD_IMAGE=dockerhub.fubao666.cn/$CI_PROJECT_PATH:$CI_COMMIT_SHA
+    - docker build -t $BUILD_IMAGE .
+    - docker push $BUILD_IMAGE
+    - echo "docker image build success"
+
+deploy_test:
+  variables:
+    PUBHOST: 172.22.1.11
+    PUBPORT: 28103
+    NACOS_IP_PORT: "10.23.16.33:8848"
+    NACOS_NAMESPACE: "58b6605a-b472-48e4-af09-5f0121e94554"
+    DEPLOY_DOCKERCOMPOSE_FILE: "$CI_PROJECT_DIR/app-build/cicd/test/docker-compose/docker-compose.yml"
+    DEPLOY_ANSIBLE_PLAYBOOK: "$CI_PROJECT_DIR/app-build/cicd/test/ansible-playbook/docker-compose-playbook.yml"
+    SERVICE_NAME: "$CI_PROJECT_NAMESPACE-$CI_PROJECT_TITLE"
+  stage: test
+  tags:
+    - runner-vm
+  when: manual
+  dependencies:
+      - maven_docker_build
+  artifacts:
+    paths:
+      - docker-compose*.yml
+  script:
+    - echo $SERVICE_NAME
+    - BUILD_IMAGE=dockerhub.fubao666.cn/$CI_PROJECT_PATH:$CI_COMMIT_SHA
+    - BUILD_IMAGE=$BUILD_IMAGE PUBHOST=$PUBHOST PUBPORT=$PUBPORT NACOS_IP_PORT=$NACOS_IP_PORT NACOS_NAMESPACE=$NACOS_NAMESPACE docker-compose -f $DEPLOY_DOCKERCOMPOSE_FILE config > docker-compose-$CI_COMMIT_SHA.yml
+    - sed -i "s/SERVICE_NAME/$SERVICE_NAME/" docker-compose-$CI_COMMIT_SHA.yml
+    - docker run --rm -v /etc/ansible/hosts:/etc/ansible/hosts -v /root/.ssh/:/root/.ssh/:ro -v /home/gitlab-runner/builds/:/home/gitlab-runner/builds/ dockerhub.fubao666.cn/ansible/centos7-ansible:latest ansible-playbook $DEPLOY_ANSIBLE_PLAYBOOK -e PUBHOST=$PUBHOST -e CI_PROJECT_PATH=$CI_PROJECT_PATH -e DEPLOY_DOCKERCOMPOSE_FILE=$DEPLOY_DOCKERCOMPOSE_FILE -e BUILD_IMAGE=$BUILD_IMAGE -e SERVICE_NAME=$SERVICE_NAME -e PUBHOST=$PUBHOST -e PUBPORT=$PUBPORT -e NACOS_IP_PORT=$NACOS_IP_PORT -e NACOS_NAMESPACE=$NACOS_NAMESPACE
+
+deploy_prod:
+  variables:
+    PUBHOST: 10.23.16.36
+    PUBPORT: 28103
+    NACOS_IP_PORT: "10.23.16.33:8848"
+    NACOS_NAMESPACE: "6f2249e5-3e08-45f2-90c7-b4e8cec0de11"
+    DEPLOY_DOCKERCOMPOSE_FILE: "$CI_PROJECT_DIR/app-build/cicd/prod/docker-compose/docker-compose.yml"
+    DEPLOY_ANSIBLE_PLAYBOOK: "$CI_PROJECT_DIR/app-build/cicd/prod/ansible-playbook/docker-compose-playbook.yml"
+    SERVICE_NAME: "$CI_PROJECT_NAMESPACE-$CI_PROJECT_TITLE"
+  stage: prod
+  only:
+      - master
+  tags:
+    - runner-vm
+  when: manual
+  dependencies:
+      - maven_docker_build
+  artifacts:
+    paths:
+      - docker-compose*.yml
+  script:
+    - echo $SERVICE_NAME
+    - BUILD_IMAGE=dockerhub.fubao666.cn/$CI_PROJECT_PATH:$CI_COMMIT_SHA
+    - BUILD_IMAGE=$BUILD_IMAGE PUBHOST=$PUBHOST PUBPORT=$PUBPORT NACOS_IP_PORT=$NACOS_IP_PORT NACOS_NAMESPACE=$NACOS_NAMESPACE docker-compose -f $DEPLOY_DOCKERCOMPOSE_FILE config > docker-compose-$CI_COMMIT_SHA.yml
+    - sed -i "s/SERVICE_NAME/$SERVICE_NAME/" docker-compose-$CI_COMMIT_SHA.yml
+    - docker run --rm -v /etc/ansible/hosts:/etc/ansible/hosts -v /root/.ssh/:/root/.ssh/:ro -v /home/gitlab-runner/builds/:/home/gitlab-runner/builds/ dockerhub.fubao666.cn/ansible/centos7-ansible:latest ansible-playbook $DEPLOY_ANSIBLE_PLAYBOOK -e PUBHOST=$PUBHOST -e CI_PROJECT_PATH=$CI_PROJECT_PATH -e DEPLOY_DOCKERCOMPOSE_FILE=$DEPLOY_DOCKERCOMPOSE_FILE -e BUILD_IMAGE=$BUILD_IMAGE -e SERVICE_NAME=$SERVICE_NAME -e PUBHOST=$PUBHOST -e PUBPORT=$PUBPORT -e NACOS_IP_PORT=$NACOS_IP_PORT -e NACOS_NAMESPACE=$NACOS_NAMESPACE
+
+qianyi-deploy_prod:
+  variables:
+    PUBHOST: 10.23.16.35
+    DEPLOY_ANSIBLE_PLAYBOOK: "$CI_PROJECT_DIR/app-build/cicd/prod/ansible-playbook/publish-passive-playbook.yml"
+  stage: prod
+  only:
+      - master
+  tags:
+    - runner-vm
+  when: manual
+  dependencies:
+      - maven_docker_build
+  script:
+    - docker run --rm -v /etc/ansible/hosts:/etc/ansible/hosts -v /root/.ssh/:/root/.ssh/:ro -v /home/gitlab-runner/builds/:/home/gitlab-runner/builds/ dockerhub.fubao666.cn/ansible/centos7-ansible:latest ansible-playbook $DEPLOY_ANSIBLE_PLAYBOOK -e PUBHOST=$PUBHOST -e CI_PROJECT_NAMESPACE=$CI_PROJECT_NAMESPACE -e CI_PROJECT_TITLE=$CI_PROJECT_TITLE -e CI_COMMIT_SHA=$CI_COMMIT_SHA

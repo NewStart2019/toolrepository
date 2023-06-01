@@ -1,0 +1,17 @@
+version: "3.6"
+
+services:
+  cornerstone:
+    build: .
+    container_name: cornerstone_cornerstone
+    environment:
+        - TZ="Asia/Shanghai"
+        - JAZMIN_DB_USER=root
+        - JAZMIN_DB_HOST=172.16.0.145
+        - JAZMIN_DB_PWD=R_qNhdi5vo
+        - JAZMIN_DB_PORT=3306
+    ports:
+        - 8888:8888
+    volumes:
+        - /app/Cornerstone/log:/cshome/jazmin_server_jdk10/log
+        - /app/Cornerstone/file_storage:/cshome/jazmin_server_jdk10/file_storage    

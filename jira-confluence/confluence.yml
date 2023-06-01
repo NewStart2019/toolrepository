@@ -1,0 +1,34 @@
+version: '3.8'
+services:
+  confluence:
+    image: 172.16.0.145:8083/tool/confluence:1.0
+    container_name: confluence
+    ports:
+      - "8090:8090"
+    environment:
+      - TZ="Asia/Shanghai"
+      - JVM_MINIMUM_MEMORY=1g
+      - JVM_MAXIMUM_MEMORY=2g
+      - ATL_JDBC_URL=jdbc:mysql://172.16.0.145:3306/confluence?useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false&amp;serverTimezone=GMT%2B8&amp;allowPublicKeyRetrieval=true&amp;sessionVariables=storage_engine=InnoDB
+      - ATL_JDBC_USER=root
+      - ATL_JDBC_PASSWORD=R_qNhdi5vo
+      - ATL_DB_TYPE=mysql
+      - ATL_DB_DRIVER=com.mysql.cj.jdbc.Driver
+      - ATL_TOMCAT_PORT=8090
+      # 注意这里IP应该是容器宿主的ip
+      - ATL_TOMCAT_PROXY_NAME=172.16.0.15
+      - ATL_TOMCAT_PROXY_PORT=8090
+      - ATL_TOMCAT_SCHEME=http
+      # 注意这里IP应该是容器宿主的ip
+      - ATL_PROXY_NAME=172.16.0.15
+      - ATL_PROXY_PORT=8090
+      - ATL_CONFLUENCE_HOME=/var/atlassian/application-data/confluence
+    volumes:
+      - confluence_data:/var/atlassian/application-data/confluence
+volumes:
+  confluence_data: 
+    driver: local
+    driver_opts:
+      type: none
+      device: /app/confluence/data
+      o: bind

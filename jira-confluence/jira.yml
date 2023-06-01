@@ -1,0 +1,64 @@
+version: '3.8'
+services:
+  jira:
+    image: cptactionhank/atlassian-jira-software:latest
+    container_name: jira
+    ports:
+      - "8091:8091"
+    environment:
+      - TZ="Asia/Shanghai"
+      - JVM_MINIMUM_MEMORY=1024m
+      - JVM_MAXIMUM_MEMORY=4096m
+      - ATL_JDBC_URL=jdbc:mysql://172.16.0.145:3306/jira?useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false&amp;serverTimezone=GMT%2B8&amp;allowPublicKeyRetrieval=true&amp;sessionVariables=storage_engine=InnoDB
+      - ATL_JDBC_USER=root
+      - ATL_JDBC_PASSWORD=R_qNhdi5vo
+      - ATL_DB_TYPE=mysql
+      - ATL_DB_DRIVER=com.mysql.cj.jdbc.Driver
+      - ATL_TOMCAT_PORT=8091
+      - ATL_TOMCAT_PROXY_NAME=localhost
+      - ATL_TOMCAT_PROXY_PORT=8091
+      - ATL_TOMCAT_SCHEME=http
+      - ATL_PROXY_NAME=localhost
+      - ATL_PROXY_PORT=8080
+      - ATL_JIRA_HOME=/var/atlassian/application-data/jira
+    volumes:
+      - jira_data:/var/atlassian/application-data/jira
+  confluence:
+    image: cptactionhank/atlassian-confluence:latest
+    container_name: confluence
+    ports:
+      - "8090:8090"
+    environment:
+      - TZ="Asia/Shanghai"
+      - JVM_MINIMUM_MEMORY=1024m
+      - JVM_MAXIMUM_MEMORY=4096m
+      - ATL_JDBC_URL=jdbc:mysql://172.16.0.145:3306/confluence?useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false&amp;serverTimezone=GMT%2B8&amp;allowPublicKeyRetrieval=true&amp;sessionVariables=storage_engine=InnoDB
+      - ATL_JDBC_USER=root
+      - ATL_JDBC_PASSWORD=R_qNhdi5vo
+      - ATL_DB_TYPE=mysql
+      - ATL_DB_DRIVER=com.mysql.cj.jdbc.Driver
+      - ATL_TOMCAT_PORT=8090
+      - ATL_TOMCAT_PROXY_NAME=localhost
+      - ATL_TOMCAT_PROXY_PORT=8090
+      - ATL_TOMCAT_SCHEME=http
+      - ATL_PROXY_NAME=localhost
+      - ATL_PROXY_PORT=8090
+      - ATL_CONFLUENCE_HOME=/var/atlassian/application-data/confluence
+    volumes:
+      - confluence_data:/var/atlassian/application-data/confluence
+      - /app/confluence/atlassian-agent.jar:/opt/atlassian/confluence/atlassian-agent.jar
+volumes:
+  jira_data: 
+    driver: local
+    driver_opts:
+      type: none
+      device: /app/jira/data
+      o: bind
+  confluence_data: 
+    driver: local
+    driver_opts:
+      type: none
+      device: /app/confluence/data
+      o: bind
+
+# 启动完成之后：confluence容器执行 docker-compose run confluence echo 'export CATALINA_OPTS="-javaagent:/opt/atlassian/confluence/atlassian-agent.jar ${CATALINA_OPTS}"' >> /opt/atlassian/confluence/bin/setenv.sh

@@ -1,0 +1,14 @@
+version: '3.6'
+services:
+  libreoffice:
+    image: libreoffice/online
+    container_name: libreoffice
+    ports:
+      - "9980:9980"
+    environment:
+      - domain=172.16.0.15
+      - username=admin
+      - password=admin
+      - extra_params="--o:ssl.enable=false"
+    volumes:
+      - /root/libreoffice/Documents:/opt/storage

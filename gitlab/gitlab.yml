@@ -1,0 +1,23 @@
+version: '3.6'
+services:
+  gitlab:
+    image: 'gitlab/gitlab-ce:latest'
+    container_name: 'gitlab'
+    restart: always
+    hostname: '172.16.0.145'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://172.16.0.145:8929'
+        nginx['listen_port'] = 8929
+        gitlab_rails['gitlab_ssh_host'] = '172.16.0.145'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2224
+      GITLAB_SKIP_UNMIGRATED_DATA_CHECK: 'true'
+      TZ: "Asia/Shanghai"
+    ports:
+      - '8929:8929'
+      - '2224:22'
+    volumes:
+      - '/app/gitlab/config:/etc/gitlab'
+      - '/app/gitlab/logs:/var/log/gitlab'
+      - '/app/gitlab/data:/var/opt/gitlab'
+    shm_size: '1g'

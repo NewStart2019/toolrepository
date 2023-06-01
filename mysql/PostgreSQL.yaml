@@ -1,0 +1,13 @@
+version: "3.6"
+
+services:
+  db:
+    image: postgres:14
+    container_name: 'postgres'
+    environment:
+        POSTGRES_USER: root
+        POSTGRES_PASSWORD: ePVw#DD#q
+    ports:
+      - "5432:5432"
+    volumes:
+      - /app/postgres/data:/var/lib/postgresql/data

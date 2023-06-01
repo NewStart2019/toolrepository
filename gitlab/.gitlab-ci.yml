@@ -1,0 +1,59 @@
+stages:
+  # 下载依赖包、构建项目
+  #- build
+  # 代码检测
+  - check
+  # 准备：打包镜像，上传仓库,删除目标服务器；指定版本的容器、镜像
+  #- prepare
+  # 部署：传递docker-compose文件，构建容器
+  - run
+
+sonarqube_check:
+  tags:
+    - default
+  stage: check
+  image: gradle:jdk17
+  when: manual
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+    GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - /app/sonarqube/cache
+  script: gradle sonar
+  allow_failure: true
+  only:
+    - merge_requests
+    - dev
+
+
+# 执行对应的脚本
+deploy_run:
+  tags:
+    - default
+  stage: run
+  variables:
+    # 注意：请和build.gradle下面的docker.springBootApplication.images 名称一致，版本默认都是latest
+    MODULE_PROJECT_NANE: iot-busi
+    IMAGE_NAME: csatc/$MODULE_PROJECT_NANE
+    # 容器映射端口
+    PORT: 8082
+    CONTAINER_NAME: $MODULE_PROJECT_NANE
+    # 目标服务器的项目路径
+    TARGET_SERVER: $DEV_IP
+    ROOT_PATH: /app/$PROJECT_NANE
+  when: manual
+  before_script:
+    - if [ "${CI_COMMIT_REF_NAME}" = "master" || "${CI_COMMIT_REF_NAME}" = "main" ]; then TARGET_SERVER=${PRO_IP}; echo "当前正在部署正式系统${TARGET_SERVER}"; else echo "当前正在部署测试系统${TARGET_SERVER}"; fi
+    # 添加了远程服务器的SSH密钥 （必须生成文件，否则无法访问远程主机）
+    - mkdir /root/.ssh && touch /root/.ssh/known_hosts && ssh-keyscan -t rsa $TARGET_SERVER >> /root/.ssh/known_hosts
+  script:
+    - echo "下载仓库代码……"
+    - chmod +x /run/download.sh
+    - echo $CI_REPOSITORY_URL
+    - sshpass -p $PASSWORD ssh $USER@$TARGET_SERVER 'bash -s' < /run/download.sh $ROOT_PATH $CI_REPOSITORY_URL $CI_COMMIT_REF_NAME
+    - echo "开始执行打包、测试、部署……"
+    - sshpass -p $PASSWORD ssh $USER@$TARGET_SERVER "chmod +x $ROOT_PATH/code/prod-api.sh;chmod +x $ROOT_PATH/code/gradlew"
+    - sshpass -p $PASSWORD ssh $USER@$TARGET_SERVER "$ROOT_PATH/code/prod-api.sh $ROOT_PATH $CI_COMMIT_REF_NAME $IMAGE_NAME $CONTAINER_NAME $PORT"
+
