@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="jira-confluence">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/jira-confluence/atlassian-agent.jar!/" />
+      <root url="jar://$PROJECT_DIR$/jira-confluence/atlassian-agent-v1.2.3.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
