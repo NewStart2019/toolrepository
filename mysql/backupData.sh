@@ -32,7 +32,7 @@ MYSQL_PASSWORD="R_qNhdi5vo"
 BACKUP_FILE="${BACKUP_DIR}/${CURRENT_DATE}.sql"
 
 # 使用 mysqldump 备份数据库
-docker exec -it mysql8 mysqldump -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" "${DB_NAME}" >"${BACKUP_FILE}"
+docker exec -i mysql8 mysqldump -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" "${DB_NAME}" >"${BACKUP_FILE}"
 
 # 如果今天是每月月底，将当天备份文件保存为月底备份文件，然后删除当月其他文件
 if [ "${CURRENT_DATE}" = "${LAST_DAY_OF_MONTH}" ]; then
@@ -41,4 +41,4 @@ if [ "${CURRENT_DATE}" = "${LAST_DAY_OF_MONTH}" ]; then
 fi
 
 # 输出备份完成消息
-echo "数据库备份完成：${BACKUP_FILE}"
+echo "${CURRENT_DATE}数据库备份完成：${BACKUP_FILE}"
