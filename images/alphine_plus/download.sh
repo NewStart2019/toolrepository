@@ -14,6 +14,7 @@ cd $ROOT_PATH/code
 git clone -b $TAG $REPOSITORY_URL
 REPOSITORY_NAME=$(ls)
 mv $ROOT_PATH/code/$REPOSITORY_NAME/* $ROOT_PATH/code/
+mv $ROOT_PATH/code/$REPOSITORY_NAME/.* $ROOT_PATH/code/
 if [ "$COMMIT" != "" ]; then
     git checkout "$COMMIT"
 fi

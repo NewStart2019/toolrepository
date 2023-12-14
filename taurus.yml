@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  taurus:
+    image: blazemeter/taurus
+    container_name: taurus
+    volumes:
+      - ./config:/bzt-configs
+    ports:
+      - "8049:80"
