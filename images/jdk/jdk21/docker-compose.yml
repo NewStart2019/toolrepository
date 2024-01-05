@@ -1,0 +1,9 @@
+version: "3.8"
+
+services:
+  jdk21:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: 172.16.0.145:8083/tool/jdk21:1.0
+

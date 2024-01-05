@@ -1,6 +1,6 @@
 FROM alpine:3
 MAINTAINER ee900222 [email protected]
- 
+
 # install sshpass
 ADD ./download.sh /run/
 # 替换阿里云仓库
