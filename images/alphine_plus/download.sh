@@ -16,6 +16,6 @@ REPOSITORY_NAME=$(ls)
 mv $ROOT_PATH/code/$REPOSITORY_NAME/* $ROOT_PATH/code/
 mv $ROOT_PATH/code/$REPOSITORY_NAME/.* $ROOT_PATH/code/
 if [ "$COMMIT" != "" ]; then
-    git checkout "$COMMIT"
+    git checkout -q "$COMMIT"
 fi
 git log --oneline -n 1 HEAD
