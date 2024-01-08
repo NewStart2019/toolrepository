@@ -1,0 +1,8 @@
+version: "3.8"
+
+services:
+  jdk8:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: 172.16.0.145:8083/alpine_sshpass:1.10
