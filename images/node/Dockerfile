@@ -1,5 +1,5 @@
 FROM centos:centos7.9.2009
-MAINTAINER zqh
+LABEL org.opencontainers.image.authors="zqh"
 
 # 安装wget
 RUN yum install -y wget
@@ -16,6 +16,7 @@ WORKDIR /app
 # 安装nvm
 COPY nvm_install.sh /app
 COPY nvm_gcc_environment_deal.sh /app
+COPY nvm_version_change.sh /app
 
 # 安装sshpass
 RUN sh nvm_install.sh
