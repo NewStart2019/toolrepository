@@ -9,7 +9,7 @@ RUN wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Cen
 RUN sed -i 's/$releasever/7/g' /etc/yum.repos.d/CentOS-Base.repo
 RUN yum clean all
 RUN yum makecache
-RUN yum update
+RUN yum -y update
 
 WORKDIR /app
 
