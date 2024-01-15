@@ -17,4 +17,5 @@ RUN sh nvm_install.sh
 RUN sh nvm_gcc_environment_deal.sh
 
 # 安装ssh、sshpass、git
-RUN yum install -y openssh-clients sshpass git
+RUN yum -y install openssh-clients sshpass \
+    curl-devel expat-devel gettext-devel openssl-devel zlib-devel git
