@@ -7,10 +7,6 @@ RUN yum install -y wget
 RUN mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
 RUN wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
 RUN sed -i 's/$releasever/7/g' /etc/yum.repos.d/CentOS-Base.repo
-
-RUN echo "nameserver 223.6.6.6" >> /etc/resolv.conf
-RUN systemctl restart network
-
 RUN yum clean all
 RUN yum makecache
 RUN yum -y update
