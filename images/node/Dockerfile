@@ -18,6 +18,9 @@ COPY nvm_install.sh /app
 COPY nvm_gcc_environment_deal.sh /app
 COPY nvm_version_change.sh /app
 
-# 安装sshpass
+# 安装nvm
 RUN sh nvm_install.sh
 RUN sh nvm_gcc_environment_deal.sh
+
+# 安装ssh、sshpass
+RUN yum install -y openssh-server openssh-clients sshpass
