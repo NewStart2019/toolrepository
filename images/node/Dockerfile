@@ -1,13 +1,20 @@
-FROM alpine:3
+FROM centos:centos7.9.2009
 MAINTAINER zqh
- 
+
 # 替换阿里云仓库
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
-RUN apk update
-# 安装ssh
-RUN apk add --no-cache openssh
+RUN mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
+RUN wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+RUN sed -i 's/$releasever/7/g' /etc/yum.repos.d/CentOS-Base.repo
+RUN yum clean all
+RUN yum makecache
+RUN yum update
+
+WORKDIR /app
+
+# 安装nvm
+COPY nvm_install.sh /app
+COPY nvm_gcc_environment_deal.sh /app
+
 # 安装sshpass
-RUN apk add --upgrade sshpass
-# 安装node、npm
-RUN apk add nodejs npm
-CMD ["/etc/init.d/sshd", "-D"]
+RUN sh nvm_install.sh
+RUN sh nvm_gcc_environment_deal.sh

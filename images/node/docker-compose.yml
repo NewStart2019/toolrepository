@@ -1,0 +1,8 @@
+version: "3.8"
+
+services:
+  base_container:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: 172.16.0.145:8083/tool/nvm:1.0.0
