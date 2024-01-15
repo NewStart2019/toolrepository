@@ -85,7 +85,7 @@ bison --version
 if [ "$?" -ne 127 ]; then
   echo -e "\e[31m已经安装过bison\e[0m"
 else
-  sudo yum -y install bison
+  yum -y install bison
 fi
 
 #################### 下载glibc 需要 make4
@@ -161,8 +161,8 @@ glibc_upgrade() {
     cd || exit
     rm -rf glibc-2.28.tar.gz glibc-2.28
     # 设置语言环境变量
-    sudo localedef -i zh_CN -f UTF-8 zh_CN.UTF-8
-    sudo mandb
+    localedef -i zh_CN -f UTF-8 zh_CN.UTF-8
+    mandb
   fi
   echo -e "\e[31mInstalled glibc-2.28\e[0m"
 }
@@ -178,7 +178,7 @@ libstdc_upgrade() {
     # 文件不存在则下载
     if [[ ! -e "/lib64/libstdc++.so.6.0.26" ]]; then
     #  sudo wget http://www.vuln.cn/wp-content/uploads/2019/08/libstdc.so_.6.0.26.zip
-      sudo wget http://172.16.0.97:84/glibc/libstdc.so_.6.0.26.zip
+      wget http://172.16.0.97:84/glibc/libstdc.so_.6.0.26.zip
       unzip libstdc.so_.6.0.26.zip
       cp libstdc++.so.6.0.26 /lib64/
     fi
