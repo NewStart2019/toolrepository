@@ -3,12 +3,6 @@ LABEL org.opencontainers.image.authors="zqh"
 
 # 安装wget
 RUN yum install -y wget
-# 替换阿里云仓库
-RUN mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
-RUN wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
-RUN sed -i 's/$releasever/7/g' /etc/yum.repos.d/CentOS-Base.repo
-RUN yum clean all
-RUN yum makecache
 RUN yum -y update
 
 WORKDIR /app
@@ -22,8 +16,5 @@ COPY nvm_version_change.sh /app
 RUN sh nvm_install.sh
 RUN sh nvm_gcc_environment_deal.sh
 
-# 安装ssh、sshpass
-RUN yum install -y openssh-server openssh-clients sshpass
-
-# 安装git
-RUN yum install -y git
+# 安装ssh、sshpass、git
+RUN yum install -y openssh-clients sshpass git
