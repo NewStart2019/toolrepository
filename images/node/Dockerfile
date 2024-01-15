@@ -1,6 +1,8 @@
 FROM centos:centos7.9.2009
 MAINTAINER zqh
 
+# 安装wget
+RUN yum install -y wget
 # 替换阿里云仓库
 RUN mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
 RUN wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
