@@ -132,9 +132,13 @@ gcc_upgrade() {
     echo -e "\e[31m正在升级gcc到8\e[0m"
     yum install -y centos-release-scl
     yum install -y devtoolset-8-gcc*
-    mv /usr/bin/gcc /usr/bin/gcc-4.8.5
+    if [[ -e "/usr/bin/gcc" ]]; then
+      mv /usr/bin/gcc /usr/bin/gcc-4.8.5
+    fi
     ln -s /opt/rh/devtoolset-8/root/bin/gcc /usr/bin/gcc
-    mv /usr/bin/g++ /usr/bin/g++-4.8.5
+    if [[ -e "/usr/bin/g++" ]]; then
+      mv /usr/bin/g++ /usr/bin/g++-4.8.5
+    fi
     ln -s /opt/rh/devtoolset-8/root/bin/g++ /usr/bin/g++
   else
     echo -e "\e[31mGCC version is greater 4.8.5.\e[0m"
