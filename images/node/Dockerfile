@@ -10,6 +10,7 @@ RUN yum clean all
 # 安装GPG 密钥
 RUN yum install -y gpg
 RUN yum makecache
+RUN yum install -y deltarpm
 RUN yum -y update
 
 WORKDIR /app
