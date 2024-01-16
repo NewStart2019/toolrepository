@@ -14,3 +14,6 @@ RUN apk add --no-cache sshpass
 
 # 安装mvn
 RUN apk add --no-cache maven
+
+# 创建目录
+RUN mkdir -p $HOME/.docker/
