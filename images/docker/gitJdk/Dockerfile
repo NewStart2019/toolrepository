@@ -10,7 +10,7 @@ RUN /bin/sh -c set -eux; file="/etc/docker/daemon.json"; \
     echo '{ "log-driver":"json-file", "log-opts": {"max-size":"500m", "max-file":"3"}, "insecure-registries": ["172.16.0.145:8083","172.16.0.145:8929"], \
      "registry-mirrors": ["http://172.16.0.145:8083/","http://172.16.0.145:8929/","https://registry.cn-hangzhou.aliyuncs.com/"] }' | tee "$file" >/dev/null;  \
     echo "File $file created and content written."; else echo "File $file already exists."; fi; \
-    systemctl start docker; docker login -u admin -p s9AGdzFaSLXyQrD 172.16.0.145:8083;  \
+    /etc/init.d/docker restart ; docker login -u admin -p s9AGdzFaSLXyQrD 172.16.0.145:8083;  \
   }; writeConfig;
 
 ENV JAVE_VERSION=21
