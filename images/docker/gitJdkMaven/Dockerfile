@@ -11,3 +11,6 @@ RUN apk add --no-cache openjdk21
 
 # 安装ssh、sshpass
 RUN apk add --no-cache sshpass
+
+# 安装mvn
+RUN apk add --no-cache maven
