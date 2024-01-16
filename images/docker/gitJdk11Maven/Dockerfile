@@ -12,6 +12,7 @@ RUN apk add --no-cache sshpass
 RUN apk add --no-cache maven
 # 创建目录
 RUN mkdir -p $HOME/.docker/
+
 # 设置maven仓库配置文件
-RUM rm -f /usr/share/maven/conf/settings.xml
+RUN rm -f /usr/share/maven/conf/settings.xml
 COPY ../settings.xml /usr/share/maven/conf/
