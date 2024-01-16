@@ -15,4 +15,4 @@ RUN mkdir -p $HOME/.docker/
 
 # 设置maven仓库配置文件
 RUN rm -f /usr/share/maven/conf/settings.xml
-COPY ../settings.xml /usr/share/maven/conf/
+COPY settings.xml /usr/share/maven/conf/
