@@ -1,0 +1,6 @@
+镜像说明：
+1、系统 alpine:3.19 apt安装
+1、基于docker:git镜像 docker24.7.0，docker-compose 2.24.0，git
+2、安装了jdk21、sshpass
+
+适用于场景：使用项目自带的gradle工具进行构建镜像，然后推送镜像
