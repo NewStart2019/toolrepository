@@ -9,6 +9,5 @@ ENV JAVE_VERSION=21
 # 安装jdk
 RUN apk add --no-cache openjdk21
 
-RUN ssh -v
 # 安装ssh、sshpass
 RUN apk add --no-cache sshpass
