@@ -14,4 +14,4 @@ RUN apk add --no-cache maven
 RUN mkdir -p $HOME/.docker/
 
 # 设置maven仓库配置文件
-ADD settings.xml /app/conf/
+COPY settings.xml /app/conf/
