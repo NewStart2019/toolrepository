@@ -14,5 +14,4 @@ RUN apk add --no-cache maven
 RUN mkdir -p $HOME/.docker/
 
 # 设置maven仓库配置文件
-RUN rm -f /usr/share/java/maven-3/conf/settings.xml
-COPY settings.xml /usr/share/java/maven-3/conf/
+ADD settings.xml /app/conf/
