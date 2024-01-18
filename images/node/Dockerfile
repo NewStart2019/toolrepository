@@ -19,6 +19,7 @@ COPY nvm_version_change.sh /app
 RUN sh nvm_install.sh
 
 # 安装ssh、sshpass、git
+RUN yum install -y epel-release
 RUN yum install -y sshpass
 RUN yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel git
 
