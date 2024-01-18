@@ -1,18 +1,8 @@
-FROM centos:centos7.9.2009
+FROM centos:7
 LABEL org.opencontainers.image.authors="zqh"
 
-# 安装wget
-RUN yum install -y wget
-RUN mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
-RUN wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
-RUN sed -i 's/$releasever/7/g' /etc/yum.repos.d/CentOS-Base.repo
-RUN yum clean all
-# 安装GPG 密钥
-RUN yum install -y gpg
-RUN yum makecache
-RUN yum -y update
-
 WORKDIR /app
+RUN touch ~/.bashrc
 
 # 安装nvm
 COPY nvm_install.sh /app
@@ -22,7 +12,11 @@ COPY nvm_version_change.sh /app
 # 安装nvm
 RUN sh nvm_install.sh
 RUN sh nvm_gcc_environment_deal.sh
+RUN source ~/.bashrc
+RUN nvm install 18.19.0
+RUN nvm use 18.19.0
 
 # 安装ssh、sshpass、git
+RUN yum install -y epel-release
 RUN yum install -y sshpass
 RUN yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel git
