@@ -20,5 +20,10 @@ RUN yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel
 # 安装sshpass https://sourceforge.net/projects/sshpass/files/latest/download
 RUN curl http://172.16.0.97:84/sshpass/sshpass-1.10.tar.gz -o sshpass-1.10.tar.gz
 RUN tar -xvf sshpass-1.10.tar.gz
-RUN cd sshpass-1.10 && ./configure && make && make install
+
+WORKDIR /app/sshpass-1.10
+RUN ./configure && make && make install
+
+WORKDIR /app
+RUN rm -rf /app/sshpass-1.10*
 
