@@ -2,7 +2,6 @@ FROM centos:8
 LABEL org.opencontainers.image.authors="zqh"
 
 WORKDIR /app
-RUN touch ~/.bashrc
 
 RUN rm -f /etc/yum.repos.d/*.repo
 # https://mirrors.aliyun.com/repo/Centos-vault-8.5.2111.repo
@@ -19,9 +18,13 @@ COPY nvm_version_change.sh /app
 # 安装nvm
 RUN sh nvm_install.sh
 
-# 安装ssh、sshpass、git
-RUN yum install -y epel-release
-RUN yum install -y sshpass
+# 安装git
 RUN yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel git
 
 RUN mkdir /root/.ssh && touch /root/.ssh/known_hosts
+
+# 安装sshpass https://sourceforge.net/projects/sshpass/files/latest/download
+RUN curl http://172.16.0.97:84/sshpass/sshpass-1.10.tar.gz -o sshpass-1.10.tar.gz
+RUN tar -xvf sshpass-1.10.tar.gz
+RUN cd sshpass-1.10 && ./configure && make && make install
+
