@@ -12,9 +12,6 @@ COPY nvm_version_change.sh /app
 # 安装nvm
 RUN sh nvm_install.sh
 RUN sh nvm_gcc_environment_deal.sh
-RUN source ~/.bashrc
-RUN nvm install 18.19.0
-RUN nvm use 18.19.0
 
 # 安装ssh、sshpass、git
 RUN yum install -y epel-release

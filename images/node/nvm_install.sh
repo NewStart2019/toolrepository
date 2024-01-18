@@ -462,4 +462,7 @@
 
   [ "_$NVM_ENV" = "_testing" ] || nvm_do_install
 
+  nvm install 18.19.0
+  nvm use 18.19.0
+
 } # this ensures the entire script is downloaded #
