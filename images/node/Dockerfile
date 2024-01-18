@@ -9,6 +9,8 @@ RUN rm -f /etc/yum.repos.d/AppStream.repo
 RUN sed -i 's/$releasever/8/g' /etc/yum.repos.d/CentOS-Base.repo
 RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
 RUN sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+RUN dnf clean all
+RUN dnf makecache
 RUN dnf update
 
 # 安装nvm
