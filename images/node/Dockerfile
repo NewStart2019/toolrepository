@@ -5,7 +5,6 @@ WORKDIR /app
 RUN touch ~/.bashrc
 
 # 安装wget
-RUN mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
 COPY CentOS-Base.repo /etc/yum.repos.d/
 RUN sed -i 's/$releasever/8/g' /etc/yum.repos.d/CentOS-Base.repo
 RUN yum clean all
