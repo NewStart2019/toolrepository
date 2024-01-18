@@ -18,4 +18,4 @@ RUN yum install -y epel-release
 RUN yum install -y sshpass
 RUN yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel git
 
-mkdir /root/.ssh && touch /root/.ssh/known_hosts
+RUN mkdir /root/.ssh && touch /root/.ssh/known_hosts
