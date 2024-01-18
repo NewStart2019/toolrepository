@@ -5,13 +5,11 @@ WORKDIR /app
 RUN touch ~/.bashrc
 
 # 安装wget
-RUN yum install -y wget
 RUN mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
-RUN wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-8.repo
+COPY CentOS-Base.repo /etc/yum.repos.d/
 RUN sed -i 's/$releasever/8/g' /etc/yum.repos.d/CentOS-Base.repo
 RUN yum clean all
 RUN yum makecache
-RUN yum -y update
 
 # 安装nvm
 COPY nvm_install.sh /app
