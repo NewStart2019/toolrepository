@@ -462,6 +462,7 @@
 
   [ "_$NVM_ENV" = "_testing" ] || nvm_do_install
 
+  source /root/.bashrc
   nvm install 18.19.0
   nvm use 18.19.0
 
