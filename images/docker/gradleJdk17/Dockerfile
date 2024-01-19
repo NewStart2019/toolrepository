@@ -15,5 +15,5 @@ RUN mkdir /root/.ssh && touch /root/.ssh/known_hosts
 
 RUN apk add curl unzip
 RUN curl -o ./sdkman-init.sh http://172.16.0.97:84/gradle/sdkman-init.sh
-RUN /bin/sh -c "./app/sdkman-init.sh"
+RUN /bin/sh -c ". /app/sdkman-init.sh"
 RUN sdk install gradle 7.6
