@@ -5,15 +5,13 @@ WORKDIR /app
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
 # 安装jdk
-RUN apk add openjdk17-jdk
+RUN apk add openjdk21
 # 安装sshpass
 RUN apk add --no-cache sshpass
-# 安装mvn
-RUN apk add --no-cache maven
 
 # 创建目录
 RUN mkdir -p $HOME/.docker/
 RUN mkdir /root/.ssh && touch /root/.ssh/known_hosts
 
-# 设置maven仓库配置文件
-COPY settings.xml /app/conf/
+# 安装jdk
+RUN apk add gradle
