@@ -6,7 +6,7 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 ENV JAVE_VERSION=21
 
 # 安装jdk
-RUN apk add --no-cache openjdk21
+RUN apk add openjdk17-jdk
 # 安装sshpass
 RUN apk add --no-cache sshpass
 # 安装mvn
