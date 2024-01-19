@@ -5,7 +5,7 @@ WORKDIR /app
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
 # 安装jdk
-RUN apk add openjdk21
+RUN apk add openjdk17
 # 安装sshpass
 RUN apk add --no-cache sshpass
 
@@ -13,5 +13,7 @@ RUN apk add --no-cache sshpass
 RUN mkdir -p $HOME/.docker/
 RUN mkdir /root/.ssh && touch /root/.ssh/known_hosts
 
-# 安装jdk
-RUN apk add gradle
+RUN apk add curl unzip
+RUN curl -s "http://172.16.0.97:84/gradle/sdkman-init.sh" | sh
+RUN source "$HOME/.sdkman/bin/sdkman-init.sh"
+RUN sdk install gradle 7.6
