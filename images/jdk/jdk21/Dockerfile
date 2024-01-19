@@ -4,5 +4,3 @@ WORKDIR /app
 
 ENV TimeZone=Asia/Shanghai
 RUN ln -sf /usr/share/zoneinfo/$TimeZone /etc/localtime && echo $TimeZone > /etc/timezone
-
-ADD fonts/* /usr/share/fonts
