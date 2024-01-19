@@ -13,6 +13,6 @@ RUN apk add --no-cache sshpass
 RUN mkdir -p $HOME/.docker/
 RUN mkdir /root/.ssh && touch /root/.ssh/known_hosts
 
-RUN apk add curl unzip
-RUN curl -o ./gradle-7.6-bin.zip http://172.16.0.97:84/gradle/gradle-7.6-bin.zip
-RUN unzip -o gradle-7.6-bin.zip
+RUN apk add gradle
+
+COPY init.gradle /root/.gradle/init.gradle
