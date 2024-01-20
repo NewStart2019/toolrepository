@@ -1,7 +1,0 @@
-镜像说明：
-1、系统 alpine:3.19 apt安装
-2、基于docker:git镜像 docker24.7.0，docker-compose 2.24.0，git、maven
-3、安装了jdk11、sshpass
-4、配置私有仓库地址
-
-适用于场景：使用项目自带的maven工具进行构建镜像，然后推送镜像

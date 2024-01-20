@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  maven11:
+    build:
+      context: .
+      dockerfile: mavenDockerfile
+      args:
+        VERSION: 11
+    image: 172.16.0.145:8083/tool/docker/mvn-11:1.0
+  maven17:
+    build:
+      context: .
+      dockerfile: mavenDockerfile
+      args:
+        VERSION: 17
+    image: 172.16.0.145:8083/tool/docker/mvn-17:1.0
+  maven21:
+    build:
+      context: .
+      dockerfile: mavenDockerfile
+      args:
+        VERSION: 21
+    image: 172.16.0.145:8083/tool/docker/mvn-21:1.0
+
+  gradle11:
+    build:
+      context: .
+      dockerfile: gradleDockerfile
+      args:
+        VERSION: 11
+    image: 172.16.0.145:8083/tool/docker/gradle-11:1.0
+
+  gradle17:
+    build:
+      context: .
+      dockerfile: gradleDockerfile
+      args:
+        VERSION: 17
+    image: 172.16.0.145:8083/tool/docker/gradle-17:1.0
+
+  gradle21:
+    build:
+      context: .
+      dockerfile: gradleDockerfile
+      args:
+        VERSION: 21
+    image: 172.16.0.145:8083/tool/docker/gradle-21:1.0
