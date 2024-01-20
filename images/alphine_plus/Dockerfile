@@ -10,4 +10,5 @@ RUN apk update
 RUN apk add --no-cache openssh
 # 安装sshpass
 RUN apk add --upgrade sshpass
+RUN mkdir /root/.ssh && touch /root/.ssh/known_hosts
 CMD ["/etc/init.d/sshd", "-D"]
