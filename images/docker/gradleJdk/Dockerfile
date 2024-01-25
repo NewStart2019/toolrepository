@@ -8,7 +8,7 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 # 安装jdk
 RUN apk add openjdk$VERSION
 # 安装sshpass
-RUN apk add --no-cache sshpass
+RUN apk add sshpass
 
 # 创建目录
 RUN mkdir -p $HOME/.docker/
@@ -17,3 +17,4 @@ RUN mkdir /root/.ssh && touch /root/.ssh/known_hosts
 RUN apk add gradle
 
 COPY init.gradle /root/.gradle/init.gradle
+COPY dockerDelete.sh /app/
