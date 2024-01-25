@@ -29,8 +29,8 @@ delete_images() {
   # 获取所有与 repository 匹配的镜像列表
   local images=$(docker images | grep "${repository} " | awk '{print $0}')
 
-  # 遍历镜像列表，删除非当前版本的镜像
-  while read -r image; do
+  # 使用 echo 和管道传递字符串给循环
+  echo "$images" | while read -r image; do
     local image_tag=$(echo "$image" | awk '{print $2}')
     local image_id=$(echo "$image" | awk '{print $3}')
     if [ "${image_tag}" != "${VERSION}" ]; then
@@ -41,7 +41,7 @@ delete_images() {
         docker rmi "${repository}:${image_tag}" -f
       fi
     fi
-  done <<< "${images}"
+  done
 }
 
 # 删除指定容器名称的 容器
