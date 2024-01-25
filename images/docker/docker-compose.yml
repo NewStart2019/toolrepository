@@ -7,21 +7,21 @@ services:
       dockerfile: mavenDockerfile
       args:
         VERSION: 11
-    image: 172.16.0.145:8083/tool/docker/mvn-11:1.0
+    image: 172.16.0.145:8083/tool/docker/mvn-11:1.1
   maven17:
     build:
       context: .
       dockerfile: mavenDockerfile
       args:
         VERSION: 17
-    image: 172.16.0.145:8083/tool/docker/mvn-17:1.0
+    image: 172.16.0.145:8083/tool/docker/mvn-17:1.1
   maven21:
     build:
       context: .
       dockerfile: mavenDockerfile
       args:
         VERSION: 21
-    image: 172.16.0.145:8083/tool/docker/mvn-21:1.0
+    image: 172.16.0.145:8083/tool/docker/mvn-21:1.1
 
   gradle11:
     build:
@@ -29,7 +29,7 @@ services:
       dockerfile: gradleDockerfile
       args:
         VERSION: 11
-    image: 172.16.0.145:8083/tool/docker/gradle-11:1.0
+    image: 172.16.0.145:8083/tool/docker/gradle-11:1.1
 
   gradle17:
     build:
@@ -37,7 +37,7 @@ services:
       dockerfile: gradleDockerfile
       args:
         VERSION: 17
-    image: 172.16.0.145:8083/tool/docker/gradle-17:1.0
+    image: 172.16.0.145:8083/tool/docker/gradle-17:1.1
 
   gradle21:
     build:
@@ -45,4 +45,4 @@ services:
       dockerfile: gradleDockerfile
       args:
         VERSION: 21
-    image: 172.16.0.145:8083/tool/docker/gradle-21:1.0
+    image: 172.16.0.145:8083/tool/docker/gradle-21:1.1

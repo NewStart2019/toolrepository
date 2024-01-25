@@ -17,3 +17,4 @@ RUN mkdir /root/.ssh && touch /root/.ssh/known_hosts
 RUN apk add gradle
 
 COPY init.gradle /root/.gradle/init.gradle
+COPY dockerDelete.sh /app/
