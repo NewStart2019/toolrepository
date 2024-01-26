@@ -31,7 +31,7 @@ fi
 
 # Get list of pipelines for project : 分页参数per_page=100。分页最大只能100
 pipelines=$(curl --silent --header "Authorization: Bearer ${personal_access_token}" "${api_endpoint}/${project_id}/pipelines?per_page=100&status=${pipeline_status}" | jq '.[] .id')
-echo $pipelines
+echo "$pipelines"
 # Loop through pipeline IDs and delete them
 for pipeline in $pipelines
 do
