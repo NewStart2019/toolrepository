@@ -98,7 +98,7 @@ data=$(du -sm /mydata | awk '{print $1}')
 os="运维服务器$(uname -s)"
 id=$(snowFlow)
 CURRENT_TIME=$(date +"%Y-%m-%d %H:%M:%S")
-COMMAND="SET NAMES utf8mb4;INSERT INTO \`stc-jcgl\`.\`sys_space\` (\`id\`,\`os_name\`, \`use_size\`, \`all_size\`, \`create_time\`) VALUES ('${id}','${os}', ${data}, ${all}, '${CURRENT_TIME}');"
+COMMAND="SET NAMES utf8mb4;INSERT INTO \`${DB_NAME}\`.\`sys_space\` (\`id\`,\`os_name\`, \`use_size\`, \`all_size\`, \`create_time\`) VALUES ('${id}','${os}', ${data}, ${all}, '${CURRENT_TIME}');"
 echo "$COMMAND"
 # 将数据存储到 MySQL 数据库
 mysql -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" "${DB_NAME}" -e "${COMMAND}"
