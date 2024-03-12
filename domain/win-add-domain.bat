@@ -4,7 +4,7 @@ setlocal enabledelayedexpansion
 
 rem 脚本存在问题：
 rem  1、默认值变量没有输出
-rem  2、设置的域名访问没有生效
+rem  2、设置的域名访问没有生效(手动设置的可以)
 
 rem 检查是否要显示帮助文档
 if "%~1"=="/?" (
