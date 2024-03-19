@@ -65,7 +65,7 @@ if [ "${CURRENT_DATE}" = "${LAST_DAY_OF_MONTH}" ]; then
 fi
 
 # 删除 RESERVE_DAY天前的文件
-find "${BACKUP_FILE}" -name '*.sql' -type f -mtime +"${RESERVE_DAY}" -exec rm {} \;
+find "${BACKUP_DIR}" -name '*.sql' -type f -mtime +"${RESERVE_DAY}" -exec rm {} \;
 
 # 输出备份完成消息
 echo "${CURRENT_DATE}数据库备份完成：${BACKUP_FILE}"
@@ -89,7 +89,8 @@ snowFlow() {
 }
 
 # 获取 /dev/sda 磁盘的总空间 GB (定时任务的执行环境中没有设置正确的 PATH 变量，注意这里fdisk全路径)
-all=$(/usr/sbin/fdisk -l | grep "磁盘 /dev/sda" | awk '{print $2}' | awk -F\： '{print $2}')
+all=$(/usr/sbin/fdisk -l | grep "Disk /dev/sda" | awk '{print $3}')
+#all=$(/usr/sbin/fdisk -l | grep "Disk /dev/sda" | awk '{print $2}' | awk -F\： '{print $2}')
 # 获取数据目录下面所占空间大小 MB
 data=$(du -sm /app | awk '{print $1}')
 # 获取操作系统名称
