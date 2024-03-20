@@ -16,6 +16,7 @@ services:
     ports:
       - '8929:8929'
       - '2224:22'
+      - "5432:5432"
     volumes:
       - '/app/gitlab/config:/etc/gitlab'
       - '/app/gitlab/logs:/var/log/gitlab'
