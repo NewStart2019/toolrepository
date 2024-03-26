@@ -138,7 +138,8 @@
             }
 
             var outputArray = []; // 存储处理后的 JSON 对象的数组
-            var b = fieldName.includes(".") !== -1; // 是否是子路径
+            var b = fieldName.includes("."); // 是否是子路径
+            debugger
             for (var i = 0; i < copies; i++) {
                 var newData = JSON.parse(JSON.stringify(parsedData)); // Deep copy
                 debugger
