@@ -4,15 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JSON数据复制与字段增加</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/base16-day.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/material.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/idea.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/darcula.min.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/display/placeholder.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/fold/foldcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/fold/foldgutter.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/fold/brace-fold.min.js"></script>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/fold/foldgutter.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
-        }
-
-        textarea {
-            width: 100%;
-            height: 150px;
-            margin-bottom: 10px;
         }
 
         input[type="number"] {
@@ -50,10 +58,28 @@
             background-color: #45a049;
         }
 
+        #themeSelector {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        #themeSelector:hover {
+            background-color: #45a049;
+        }
+
+        #themeSelector {
+            position: absolute;
+            top: 5px;
+            right: 132px;
+        }
+
         .copy-btn {
             position: absolute;
             top: 5px;
-            right: 5px;
+            right: 10px;
         }
 
         .beautifyJSON {
@@ -66,14 +92,21 @@
 <body>
 <h2>JSON数据复制与字段增加</h2>
 <div style="position: relative;">
-    <textarea id="jsonData" placeholder="输入JSON数据..."></textarea>
+    <textarea id="codemirror-textarea" placeholder="输入JSON数据..."></textarea>
+    <select id="themeSelector" >
+        <option value="darcula" selected>darcula</option>
+        <option value="idea">idea</option>
+        <option value="base16-day">Base16 Day</option>
+        <option value="material">Material</option>
+    </select>
     <button class="beautifyJSON" onclick="beautifyJSON()">美化JSON数据</button>
 </div>
 <br>
-<label for="fieldName">指定字段名:</label>
-<input type="text" id="fieldName" placeholder="字段名">
-<br>
 <div class="flex-container">
+    <div class="form-row">
+        <label for="fieldName">指定字段名:</label>
+        <input type="text" id="fieldName" placeholder="字段名">
+    </div>
     <div class="form-row">
         <label for="startIndex">起始数字:</label>
         <input type="number" id="startIndex" value="1" min="1">
@@ -93,13 +126,44 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsonlint/1.6.0/jsonlint.min.js"></script>
 <script>
+    var editor;
+    var shower;
+    // 绑定主题切换事件
+    var selector = document.getElementById("themeSelector");
+    selector.addEventListener("change", function() {
+        var theme = this.value;
+        changeTheme(theme);
+    });
+
+
     // 读取本地存储中的数据
     window.onload = function () {
-        var cachedData = localStorage.getItem('jsonData');
+        // 初始化 CodeMirror
+        editor = CodeMirror.fromTextArea(document.getElementById('codemirror-textarea'), {
+            lineNumbers: true,
+            lineWrapping: true,
+            mode: 'application/json',
+            theme: selector.value, // 主题
+            foldGutter: true,
+            gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
+            placeholder: '输入JSON数据...'
+        });
+
+        shower = CodeMirror.fromTextArea(document.getElementById('outputData'), {
+            lineNumbers: true,
+            lineWrapping: true,
+            mode: 'application/json',
+            theme: selector.value, // 主题
+            foldGutter: true,
+            gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
+            placeholder: ''
+        });
+
+        var cachedData = localStorage.getItem('codemirror-textarea');
         if (cachedData) {
-            document.getElementById('jsonData').value = cachedData;
+            editor.setValue(cachedData);
         } else {
-            document.getElementById('jsonData').value = "{}";
+            editor.setValue('{}');
         }
         document.getElementById('startIndex').value = localStorage.getItem('startIndex');
         document.getElementById('fieldName').value = localStorage.getItem('fieldName');
@@ -107,26 +171,27 @@
     };
 
     function beautifyJSON() {
-        var jsonData = document.getElementById('jsonData').value;
+        var jsonData = editor.getValue();
         try {
             var beautifiedData = JSON.stringify(JSON.parse(jsonData), null, 2);
-            document.getElementById('jsonData').value = beautifiedData;
+            editor.setValue(beautifiedData);
+            // document.getElementById('codemirror-textarea').value = beautifiedData;
             // 将数据存储到本地存储中
-            localStorage.setItem('jsonData', beautifiedData);
+            localStorage.setItem('codemirror-textarea', beautifiedData);
         } catch (error) {
             alert("JSON 数据格式错误：" + error.message);
         }
     }
 
     function processData() {
-        var jsonData = document.getElementById('jsonData').value;
+        var jsonData = editor.getValue();
         var fieldName = document.getElementById('fieldName').value;
         var startIndex = parseInt(document.getElementById('startIndex').value);
         var copies = parseInt(document.getElementById('copies').value);
         var outputData = document.getElementById('outputData');
         outputData.value = "";
 
-        localStorage.setItem('jsonData', jsonData);
+        localStorage.setItem('codemirror-textarea', jsonData);
         localStorage.setItem('fieldName', fieldName);
         localStorage.setItem('startIndex', startIndex);
         localStorage.setItem('copies', copies);
@@ -153,7 +218,7 @@
                         }
                         value = value[keys[j]];
                         if (j === keys.length - 2) {
-                            value[keys[j+1]] = value[keys[j+1]] + (startIndex + i);
+                            value[keys[j + 1]] = value[keys[j + 1]] + (startIndex + i);
                         }
                     }
                 } else {
@@ -163,16 +228,20 @@
                 }
                 outputArray.push(newData); // 将处理后的 JSON 对象存入数组
             }
-            outputData.value = JSON.stringify(outputArray, null, 2); // 输出 JSON 数组字符串
+            shower.setValue( JSON.stringify(outputArray, null, 2));
         } catch (error) {
-            outputData.value = "处理数据时发生错误：" + error.message;
+            shower.setValue( "处理数据时发生错误：" + error.message);
         }
     }
 
     function copyOutputData() {
-        var outputData = document.getElementById('outputData');
-        outputData.select();
-        document.execCommand('copy');
+        navigator.clipboard.writeText(shower.getValue());
+    }
+
+    // 更改主题
+    function changeTheme(theme) {
+        editor.setOption("theme", theme);
+        shower.setOption("theme", theme);
     }
 </script>
 </body>
