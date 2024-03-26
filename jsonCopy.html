@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON数据复制与字段增加</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 10px;
+        }
+
+        input[type="number"] {
+            width: 80px;
+            margin-right: 10px;
+        }
+
+        .flex-container {
+            display: flex;
+            justify-content: center;
+        }
+
+        .form-row {
+            display: flex;
+            align-items: center;
+        }
+
+        .form-row label {
+            margin-right: 5px;
+        }
+
+        .form-row input[type="number"] {
+            flex: 1;
+        }
+
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+        }
+
+        .beautifyJSON {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+        }
+    </style>
+</head>
+<body>
+<h2>JSON数据复制与字段增加</h2>
+<div style="position: relative;">
+    <textarea id="jsonData" placeholder="输入JSON数据..."></textarea>
+    <button class="beautifyJSON" onclick="beautifyJSON()">美化JSON数据</button>
+</div>
+<br>
+<label for="fieldName">指定字段名:</label>
+<input type="text" id="fieldName" placeholder="字段名">
+<br>
+<div class="flex-container">
+    <div class="form-row">
+        <label for="startIndex">起始数字:</label>
+        <input type="number" id="startIndex" value="1" min="1">
+    </div>
+    <div class="form-row">
+        <label for="copies">复制次数:</label>
+        <input type="number" id="copies" value="1" min="1">
+    </div>
+    <button class="form-row" onclick="processData()">复制并增加字段值</button>
+</div>
+<br>
+<h3>输出结果:</h3>
+<div style="position: relative;">
+    <textarea id="outputData" readonly></textarea>
+    <button class="copy-btn" onclick="copyOutputData()">复制</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsonlint/1.6.0/jsonlint.min.js"></script>
+<script>
+    // 读取本地存储中的数据
+    window.onload = function () {
+        var cachedData = localStorage.getItem('jsonData');
+        if (cachedData) {
+            document.getElementById('jsonData').value = cachedData;
+        } else {
+            document.getElementById('jsonData').value = "{}";
+        }
+        document.getElementById('startIndex').value = localStorage.getItem('startIndex');
+        document.getElementById('fieldName').value = localStorage.getItem('fieldName');
+        document.getElementById('copies').value = localStorage.getItem('copies');
+    };
+
+    function beautifyJSON() {
+        var jsonData = document.getElementById('jsonData').value;
+        try {
+            var beautifiedData = JSON.stringify(JSON.parse(jsonData), null, 2);
+            document.getElementById('jsonData').value = beautifiedData;
+            // 将数据存储到本地存储中
+            localStorage.setItem('jsonData', beautifiedData);
+        } catch (error) {
+            alert("JSON 数据格式错误：" + error.message);
+        }
+    }
+
+    function processData() {
+        var jsonData = document.getElementById('jsonData').value;
+        var fieldName = document.getElementById('fieldName').value;
+        var startIndex = parseInt(document.getElementById('startIndex').value);
+        var copies = parseInt(document.getElementById('copies').value);
+        var outputData = document.getElementById('outputData');
+        outputData.value = "";
+
+        localStorage.setItem('jsonData', jsonData);
+        localStorage.setItem('fieldName', fieldName);
+        localStorage.setItem('startIndex', startIndex);
+        localStorage.setItem('copies', copies);
+
+        try {
+            var parsedData = JSON.parse(jsonData);
+            if (typeof parsedData !== 'object' || parsedData === null) {
+                throw new Error('输入的JSON数据必须是一个对象');
+            }
+
+            var outputArray = []; // 存储处理后的 JSON 对象的数组
+            var b = fieldName.includes(".") !== -1; // 是否是子路径
+            for (var i = 0; i < copies; i++) {
+                var newData = JSON.parse(JSON.stringify(parsedData)); // Deep copy
+                debugger
+                // 如果没有嵌套json对象
+                if (b) {
+                    var keys = fieldName.split('.');
+                    var value = newData;
+                    for (var j = 0; j < keys.length; j++) {
+                        if (value[keys[j]] === undefined) {
+                            continue;
+                        }
+                        value = value[keys[j]];
+                        if (j === keys.length - 2) {
+                            value[keys[j+1]] = value[keys[j+1]] + (startIndex + i);
+                        }
+                    }
+                } else {
+                    if (fieldName in newData) {
+                        newData[fieldName] = newData[fieldName] + (startIndex + i);
+                    }
+                }
+                outputArray.push(newData); // 将处理后的 JSON 对象存入数组
+            }
+            outputData.value = JSON.stringify(outputArray, null, 2); // 输出 JSON 数组字符串
+        } catch (error) {
+            outputData.value = "处理数据时发生错误：" + error.message;
+        }
+    }
+
+    function copyOutputData() {
+        var outputData = document.getElementById('outputData');
+        outputData.select();
+        document.execCommand('copy');
+    }
+</script>
+</body>
+</html>

@@ -12,5 +12,5 @@ services:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: 123456
     volumes:
-      # 挂载数据目录
+      # 挂载数据目录: /data/db/.mongodb/mongosh 目录里面包含日志文件
       - /app/mongdb/db:/data/db

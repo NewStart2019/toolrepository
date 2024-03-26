@@ -1,31 +1,55 @@
 version: "3.8"
 
 services:
-  mongodb_primary:
+  mongodb:
     image: mongo
-    container_name: mongodb_primary
+    container_name: mongodb
+    restart: unless-stopped
+    command:
+      - /bin/sh
+      - -c
+      - |
+        chmod 400 /data/mongodb/keyFile.pem
+        chown 999:999 /data/mongodb/keyFile.pem
+        mongod --replSet rs0 --bind_ip_all --clusterAuthMode keyFile --keyFile /data/mongodb/keyFile.pem --auth
     ports:
       - "27017:27017"
+    environment:
+      TZ: "Asia/Shanghai"
     volumes:
-      - /app/mongodb/primary_data:/data/db
-    command: mongod --replSet rs0
-    networks:
-      - mongo-cluster
+      - ./db:/data/db
+      # 自定义数据备份目录，可以定时全量备份数据出来
+      - ./mybackup:/mybackup
+      - ./keyFile.pem:/data/mongodb/keyFile.pem
 
-  mongodb_secondary:
-    image: mongo
-    container_name: mongodb_secondary
-    ports:
-      - "27018:27017"
-    volumes:
-      - /app/mongodb/secondary_data:/data/db
-    networks:
-      - mongo-cluster
+# 1、准备keyFile
+# 测试在4.x版本不需要使用keyFile,但是≥5.x版本是必须要KeyFile的，不然会报 “BadValue: security.keyFile is required when authorization is enabled with replica sets”
+# 1、1 openssl rand -base64 128 > ./mongodb/keyFile
+#  openssl rand -base64 756 > keyFile
+#    keyFile文件的权限必须为600,如果权限太大，启动时会报“error opening file: /data/mongodb/keyFile: bad file”
+# sudo chmod 600 keyFile
+#    需要把keyFile文件的所属用户和用户组改为mongodb不然在启动时会报"permissions on /data/mongodb/keyFile are too open"
+# sudo chown mongod:mongod keyFile
 
-networks:
-  mongo-cluster:
-    driver: bridge
+#2、docker exec -it mongodb mongosh
+# 在 MongoDB 控制台中执行以下命令, 创建了一个一主一从的 MongoDB
+#  如果是一个副本集那么 rs.initiate() 命令即可
+# rs.initiate({_id: "rs0", members: [{ _id : 0, host : "172.16.0.15:27017" }, { _id : 1, host : "172.16.0.15:27018" }]}))
+# 或者使用 容器名称
+# rs.initiate({_id: "rs0", members: [{_id: 0, host: "mongodb_primary:27017"}, {_id: 1, host: "mongodb_secondary:27018"}]})
 
-#docker exec -it mongodb_primary mongo
-# 在 MongoDB 控制台中执行以下命令, 创建了一个一主一从的 MongoDB 副本集
-#rs.initiate({_id: "rs0", members: [{ _id : 0, host : "mongodb_primary:27017" }, { _id : 1, host : "mongodb_secondary:27017" }]})
+
+# 3、设置用户密码
+#    副本集镜像设置用户密码失败也是说环境
+#  mongosh
+#  use admin
+#  db.createUser({user: "admin", pwd: "123456", roles:[{role: "root", db: "admin"}]});
+#
+
+
+#  echo "vm.max_map_count=262144" > /etc/sysctl.conf
+#  sysctl -p
+
+# 授权登录
+# use admin
+# db.auth("admin", "123456")
