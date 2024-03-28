@@ -16,6 +16,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/fold/foldcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/fold/foldgutter.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/fold/brace-fold.min.js"></script>
+    <!-- 引入 CodeMirror 搜索插件 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/search/search.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/search/searchcursor.js"></script>
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/fold/foldgutter.min.css">
     <style>
@@ -164,29 +167,31 @@
         changeTheme(theme);
     });
 
+    var lastCtrlGTime = 0; // 记录上一次按下 Ctrl-G 键的时间
+    var codeMirrorConfig = {
+        lineNumbers: true,
+        lineWrapping: true,
+        mode: 'application/json',
+        theme: selector.value, // 主题
+        foldGutter: true,
+        gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
+        placeholder: '输入JSON数据...',
+        extraKeys: {
+            "Ctrl-G": function(cm) {
+                cm.foldCode(cm.getCursor(), null, "fold");
+            },
+            "Ctrl-A": function(cm) {
+                cm.execCommand("foldAll");
+            }
+        }
+    };
 
     // 读取本地存储中的数据
     window.onload =  () => {
         // 初始化 CodeMirror
-        editor = CodeMirror.fromTextArea(document.getElementById('codemirror-textarea'), {
-            lineNumbers: true,
-            lineWrapping: true,
-            mode: 'application/json',
-            theme: selector.value, // 主题
-            foldGutter: true,
-            gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-            placeholder: '输入JSON数据...'
-        });
+        editor = CodeMirror.fromTextArea(document.getElementById('codemirror-textarea'), codeMirrorConfig);
 
-        shower = CodeMirror.fromTextArea(document.getElementById('outputData'), {
-            lineNumbers: true,
-            lineWrapping: true,
-            mode: 'application/json',
-            theme: selector.value, // 主题
-            foldGutter: true,
-            gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-            placeholder: ''
-        });
+        shower = CodeMirror.fromTextArea(document.getElementById('outputData'), codeMirrorConfig);
 
         var cachedData = localStorage.getItem('codemirror-textarea');
         if (cachedData) {
