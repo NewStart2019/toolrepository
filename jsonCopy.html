@@ -40,10 +40,10 @@
         .form-row {
             display: flex;
             align-items: center;
-        }
 
-        .form-row label {
-            margin-right: 5px;
+            & label {
+                margin-right: 5px;
+            }
         }
 
         .form-row input[type="number"] {
@@ -68,16 +68,13 @@
             color: white;
             border: none;
             cursor: pointer;
-        }
-
-        #themeSelector:hover {
-            background-color: #45a049;
-        }
-
-        #themeSelector {
             position: absolute;
             top: 5px;
             right: 132px;
+
+            &:hover {
+                background-color: #45a049;
+            }
         }
 
         .copy-btn {
@@ -210,15 +207,14 @@
         var fieldValues = [];
         var startIndexValues = [];
 
-        fields.forEach(function(field) {
+        fields.forEach(function (field) {
             fieldValues.push(field.value);
         });
 
-        startIndices.forEach(function(startIndex) {
+        startIndices.forEach(function (startIndex) {
             startIndexValues.push(parseInt(startIndex.value));
         });
 
-        debugger
         localStorage.setItem('copies', copies);
 
         try {
@@ -228,26 +224,35 @@
             }
 
             var outputArray = []; // 存储处理后的 JSON 对象的数组
-            var b = fieldName.includes("."); // 是否是子路径
+            var fieldName, startIndex;
             for (var i = 0; i < copies; i++) {
                 var newData = JSON.parse(JSON.stringify(parsedData)); // Deep copy
                 debugger
-                // 如果没有嵌套json对象
-                if (b) {
-                    var keys = fieldName.split('.');
-                    var value = newData;
-                    for (var j = 0; j < keys.length; j++) {
-                        if (value[keys[j]] === undefined) {
-                            continue;
+                for (var f = 0; f < fieldValues.length; f++) {
+                    fieldName = fieldValues[f];
+                    startIndex = startIndexValues[f];
+
+                    //  是否包含子路径
+                    if (fieldName.includes(".")) {
+                        var keys = fieldName.split('.');
+                        var value = newData;
+                        for (var j = 0; j < keys.length; j++) {
+                            if (value[keys[j]] === undefined) {
+                                continue;
+                            }
+                            value = value[keys[j]];
+                            if (j === keys.length - 2) {
+                                value[keys[j + 1]] = value[keys[j + 1]] + (startIndex + i);
+                                break;
+                            }
+                            if (!value){
+                                alert("JSON 数据中"+fieldName+"路径不存在字段名称：" + keys[j]);
+                            }
                         }
-                        value = value[keys[j]];
-                        if (j === keys.length - 2) {
-                            value[keys[j + 1]] = value[keys[j + 1]] + (startIndex + i);
-                        }
-                    }
-                } else {
-                    if (fieldName in newData) {
+                    } else if (fieldName in newData) {
                         newData[fieldName] = newData[fieldName] + (startIndex + i);
+                    } else {
+                        alert("JSON 数据中"+fieldName+"路径不存在字段名称：" + fieldName);
                     }
                 }
                 outputArray.push(newData); // 将处理后的 JSON 对象存入数组
@@ -272,6 +277,7 @@
     }
 
     var fieldCount = 1;
+
     function addField() {
         fieldCount++;
 
@@ -310,7 +316,9 @@
 
         newContainer.appendChild(fieldRow2); // 将字段行添加到新的容器中
 
-        container1.parentNode.insertBefore(newContainer, container1.nextSibling); // 将新的容器插入到 container1 之后
+        container1.parentNode.insertBefore(newContainer, container2);
+        // 将新的容器插入到 container1.nextSibling
+        // container1.parentNode.insertBefore(newContainer, container1.nextSibling);
     }
 
 </script>
