@@ -33,6 +33,10 @@
             justify-content: center;
         }
 
+        .flex-container + div {
+            margin-top: 30px;
+        }
+
         .form-row {
             display: flex;
             align-items: center;
@@ -87,13 +91,17 @@
             top: 5px;
             right: 5px;
         }
+
+        .add-field {
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
 <h2>JSON数据复制与字段增加</h2>
 <div style="position: relative;">
     <textarea id="codemirror-textarea" placeholder="输入JSON数据..."></textarea>
-    <select id="themeSelector" >
+    <select id="themeSelector">
         <option value="darcula" selected>darcula</option>
         <option value="idea">idea</option>
         <option value="base16-day">Base16 Day</option>
@@ -102,19 +110,22 @@
     <button class="beautifyJSON" onclick="beautifyJSON()">美化JSON数据</button>
 </div>
 <br>
-<div class="flex-container">
+<div class="flex-container" id="container1">
     <div class="form-row">
         <label for="fieldName">指定字段名:</label>
-        <input type="text" id="fieldName" placeholder="字段名">
+        <input type="text" class="fieldName" id="fieldName" placeholder="字段名">
     </div>
     <div class="form-row">
         <label for="startIndex">起始数字:</label>
-        <input type="number" id="startIndex" value="1" min="1">
+        <input type="number" class="startIndex" id="startIndex" value="1" min="1">
     </div>
+</div>
+<div class="flex-container" id="container2">
     <div class="form-row">
         <label for="copies">复制次数:</label>
         <input type="number" id="copies" value="1" min="1">
     </div>
+    <button class="form-row" class="add-field" onclick="addField()">添加字段</button>
     <button class="form-row" onclick="processData()">复制并增加字段值</button>
 </div>
 <br>
@@ -130,7 +141,7 @@
     var shower;
     // 绑定主题切换事件
     var selector = document.getElementById("themeSelector");
-    selector.addEventListener("change", function() {
+    selector.addEventListener("change", function () {
         var theme = this.value;
         changeTheme(theme);
     });
@@ -185,15 +196,29 @@
 
     function processData() {
         var jsonData = editor.getValue();
-        var fieldName = document.getElementById('fieldName').value;
-        var startIndex = parseInt(document.getElementById('startIndex').value);
+
+        // var fieldName = document.getElementById('fieldName').value;
+        // var startIndex = parseInt(document.getElementById('startIndex').value);
+
         var copies = parseInt(document.getElementById('copies').value);
         var outputData = document.getElementById('outputData');
         outputData.value = "";
 
-        localStorage.setItem('codemirror-textarea', jsonData);
-        localStorage.setItem('fieldName', fieldName);
-        localStorage.setItem('startIndex', startIndex);
+        var fields = document.querySelectorAll('.flex-container input[class="fieldName"]');
+        var startIndices = document.querySelectorAll('.flex-container input[class="startIndex"]');
+
+        var fieldValues = [];
+        var startIndexValues = [];
+
+        fields.forEach(function(field) {
+            fieldValues.push(field.value);
+        });
+
+        startIndices.forEach(function(startIndex) {
+            startIndexValues.push(parseInt(startIndex.value));
+        });
+
+        debugger
         localStorage.setItem('copies', copies);
 
         try {
@@ -204,7 +229,6 @@
 
             var outputArray = []; // 存储处理后的 JSON 对象的数组
             var b = fieldName.includes("."); // 是否是子路径
-            debugger
             for (var i = 0; i < copies; i++) {
                 var newData = JSON.parse(JSON.stringify(parsedData)); // Deep copy
                 debugger
@@ -228,14 +252,17 @@
                 }
                 outputArray.push(newData); // 将处理后的 JSON 对象存入数组
             }
-            shower.setValue( JSON.stringify(outputArray, null, 2));
+            shower.setValue(JSON.stringify(outputArray, null, 2));
         } catch (error) {
-            shower.setValue( "处理数据时发生错误：" + error.message);
+            shower.setValue("处理数据时发生错误：" + error.message);
         }
     }
 
     function copyOutputData() {
-        navigator.clipboard.writeText(shower.getValue());
+        if (window.isSecureContext) {
+            navigator.clipboard.writeText(shower.getValue());
+        }
+
     }
 
     // 更改主题
@@ -243,6 +270,49 @@
         editor.setOption("theme", theme);
         shower.setOption("theme", theme);
     }
+
+    var fieldCount = 1;
+    function addField() {
+        fieldCount++;
+
+        var container1 = document.getElementById('container2'); // 获取容器1
+        var newContainer = document.createElement('div'); // 创建新的容器
+        newContainer.className = 'flex-container'; // 添加类名
+
+        var fieldRow = document.createElement('div'); // 创建字段行
+        fieldRow.className = 'form-row'; // 添加类名
+
+        var label = document.createElement('label'); // 创建标签
+        label.setAttribute('for', 'fieldName' + fieldCount); // 设置标签的属性
+        label.textContent = '指定字段名:';
+        fieldRow.appendChild(label); // 将标签添加到字段行中
+
+        var input = document.createElement('input'); // 创建输入框
+        input.setAttribute('type', 'text'); // 设置输入框的类型
+        input.setAttribute('id', 'fieldName' + fieldCount); // 设置输入框的 id
+        input.classList.add('fieldName');
+        input.setAttribute('placeholder', '字段名'); // 设置输入框的占位符
+        fieldRow.appendChild(input); // 将输入框添加到字段行中
+
+        newContainer.appendChild(fieldRow); // 将字段行添加到新的容器中
+
+        var fieldRow2 = document.createElement('div'); // 创建字段行
+        fieldRow2.className = 'form-row'; // 添加类名
+        var label2 = document.createElement("label");
+        label2.textContent = "起始数字:";
+        fieldRow2.appendChild(label2);
+        var input2 = document.createElement("input");
+        input2.type = "number";
+        input2.classList.add("startIndex");
+        input2.value = "1";
+        input2.min = "1";
+        fieldRow2.appendChild(input2);
+
+        newContainer.appendChild(fieldRow2); // 将字段行添加到新的容器中
+
+        container1.parentNode.insertBefore(newContainer, container1.nextSibling); // 将新的容器插入到 container1 之后
+    }
+
 </script>
 </body>
 </html>
