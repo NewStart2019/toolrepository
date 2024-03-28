@@ -23,6 +23,34 @@
             font-family: Arial, sans-serif;
         }
 
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+
+            &:hover {
+                background-color: #31e739;
+            }
+        }
+
+        /* 美化输入框的默认样式 */
+        input[type="text"], input[type="number"] {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        /* 输入框获取焦点时的样式 */
+        input[type="text"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+
         input[type="number"] {
             width: 80px;
             margin-right: 10px;
@@ -31,10 +59,12 @@
         .flex-container {
             display: flex;
             justify-content: center;
-        }
-
-        .flex-container + div {
-            margin-top: 30px;
+            & + div {
+                margin-top: 20px;
+            }
+            & button{
+                border-radius: 40px;
+            }
         }
 
         .form-row {
@@ -44,22 +74,9 @@
             & label {
                 margin-right: 5px;
             }
-        }
-
-        .form-row input[type="number"] {
-            flex: 1;
-        }
-
-        button {
-            padding: 8px 16px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #45a049;
+            & input[type="number"] {
+                flex: 1;
+            }
         }
 
         #themeSelector {
@@ -116,13 +133,17 @@
         <label for="startIndex">起始数字:</label>
         <input type="number" class="startIndex" id="startIndex" value="1" min="1">
     </div>
+    <div class="form-row">
+        <button onclick="addField('')">+</button>
+        <button onclick="deleteRow(this)">-</button>
+    </div>
 </div>
 <div class="flex-container" id="container2">
     <div class="form-row">
         <label for="copies">复制次数:</label>
         <input type="number" id="copies" value="1" min="1">
     </div>
-    <button class="form-row" class="add-field" onclick="addField()">添加字段</button>
+    <button class="form-row add-field" onclick="addField('')">添加字段</button>
     <button class="form-row" onclick="processData()">复制并增加字段值</button>
 </div>
 <br>
@@ -145,7 +166,7 @@
 
 
     // 读取本地存储中的数据
-    window.onload = function () {
+    window.onload =  () => {
         // 初始化 CodeMirror
         editor = CodeMirror.fromTextArea(document.getElementById('codemirror-textarea'), {
             lineNumbers: true,
@@ -171,11 +192,38 @@
         if (cachedData) {
             editor.setValue(cachedData);
         } else {
-            editor.setValue('{}');
+            editor.setValue('{\n' +
+                '  "type": "mobile",\n' +
+                '  "price": "1200",\n' +
+                '  "addtion": {\n' +
+                '    "color": "blue",\n' +
+                '    "cpu": "intel"\n' +
+                '  }\n' +
+                '}');
         }
-        document.getElementById('startIndex').value = localStorage.getItem('startIndex');
-        document.getElementById('fieldName').value = localStorage.getItem('fieldName');
-        document.getElementById('copies').value = localStorage.getItem('copies');
+
+        document.getElementById("copies").value = localStorage.getItem("copies") || 1;
+
+        // 处理缓存字段
+        var fields = document.querySelectorAll('.flex-container input[class="fieldName"]');
+        var startIndices = document.querySelectorAll('.flex-container input[class="startIndex"]');
+        var fieldValues = localStorage.getItem("fieldValues");
+        var startIndexValues = localStorage.getItem("startIndexValues");
+        if (fieldValues == null) {
+            return;
+        }
+        if (fieldValues.length === 1) {
+            fields[0].value = fieldValues;
+            startIndices[0].value = startIndexValues;
+        } else {
+            fieldValues = fieldValues.split(',');
+            startIndexValues = startIndexValues.split(',');
+            fields[0].value = fieldValues[0];
+            startIndices[0].value = startIndexValues[0];
+            for (var i = 1; i < fieldValues.length; i++) {
+                addField(fieldValues[i], startIndexValues[i]);
+            }
+        }
     };
 
     function beautifyJSON() {
@@ -183,7 +231,6 @@
         try {
             var beautifiedData = JSON.stringify(JSON.parse(jsonData), null, 2);
             editor.setValue(beautifiedData);
-            // document.getElementById('codemirror-textarea').value = beautifiedData;
             // 将数据存储到本地存储中
             localStorage.setItem('codemirror-textarea', beautifiedData);
         } catch (error) {
@@ -193,10 +240,6 @@
 
     function processData() {
         var jsonData = editor.getValue();
-
-        // var fieldName = document.getElementById('fieldName').value;
-        // var startIndex = parseInt(document.getElementById('startIndex').value);
-
         var copies = parseInt(document.getElementById('copies').value);
         var outputData = document.getElementById('outputData');
         outputData.value = "";
@@ -215,7 +258,9 @@
             startIndexValues.push(parseInt(startIndex.value));
         });
 
-        localStorage.setItem('copies', copies);
+        localStorage.setItem('jsonData', jsonData);
+        localStorage.setItem('fieldValues', fieldValues);
+        localStorage.setItem('startIndexValues', startIndexValues);
 
         try {
             var parsedData = JSON.parse(jsonData);
@@ -227,7 +272,6 @@
             var fieldName, startIndex;
             for (var i = 0; i < copies; i++) {
                 var newData = JSON.parse(JSON.stringify(parsedData)); // Deep copy
-                debugger
                 for (var f = 0; f < fieldValues.length; f++) {
                     fieldName = fieldValues[f];
                     startIndex = startIndexValues[f];
@@ -245,14 +289,14 @@
                                 value[keys[j + 1]] = value[keys[j + 1]] + (startIndex + i);
                                 break;
                             }
-                            if (!value){
-                                alert("JSON 数据中"+fieldName+"路径不存在字段名称：" + keys[j]);
+                            if (!value) {
+                                alert("JSON 数据中" + fieldName + "路径不存在字段名称：" + keys[j]);
                             }
                         }
                     } else if (fieldName in newData) {
                         newData[fieldName] = newData[fieldName] + (startIndex + i);
                     } else {
-                        alert("JSON 数据中"+fieldName+"路径不存在字段名称：" + fieldName);
+                        alert("JSON 数据中" + fieldName + "路径不存在字段名称：" + fieldName);
                     }
                 }
                 outputArray.push(newData); // 将处理后的 JSON 对象存入数组
@@ -267,7 +311,6 @@
         if (window.isSecureContext) {
             navigator.clipboard.writeText(shower.getValue());
         }
-
     }
 
     // 更改主题
@@ -278,7 +321,7 @@
 
     var fieldCount = 1;
 
-    function addField() {
+    function addField(fieldName, startIndex) {
         fieldCount++;
 
         var container1 = document.getElementById('container2'); // 获取容器1
@@ -295,6 +338,7 @@
 
         var input = document.createElement('input'); // 创建输入框
         input.setAttribute('type', 'text'); // 设置输入框的类型
+        input.value = fieldName;
         input.setAttribute('id', 'fieldName' + fieldCount); // 设置输入框的 id
         input.classList.add('fieldName');
         input.setAttribute('placeholder', '字段名'); // 设置输入框的占位符
@@ -310,15 +354,35 @@
         var input2 = document.createElement("input");
         input2.type = "number";
         input2.classList.add("startIndex");
-        input2.value = "1";
+        input2.value = startIndex;
         input2.min = "1";
         fieldRow2.appendChild(input2);
 
         newContainer.appendChild(fieldRow2); // 将字段行添加到新的容器中
 
+        var fieldRow3 = document.createElement('div'); // 创建字段行
+        fieldRow2.className = 'form-row'; // 添加类名
+        var addButton = document.createElement("button");
+        addButton.textContent = "+";
+        addButton.onclick = () => addField('');
+        fieldRow3.appendChild(addButton);
+        var deleteButton = document.createElement("button");
+        deleteButton.textContent = "-";
+        deleteButton.onclick = () => deleteRow(deleteButton);
+        fieldRow3.appendChild(deleteButton);
+
+        newContainer.appendChild(fieldRow3);
+
         container1.parentNode.insertBefore(newContainer, container2);
         // 将新的容器插入到 container1.nextSibling
         // container1.parentNode.insertBefore(newContainer, container1.nextSibling);
+    }
+
+    // 删除当前行
+    function deleteRow(button) {
+        var formRow = button.parentNode.parentNode;
+        formRow.parentNode.removeChild(formRow);
+        fieldCount--;
     }
 
 </script>
