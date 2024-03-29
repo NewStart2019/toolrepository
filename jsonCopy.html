@@ -167,26 +167,26 @@
         changeTheme(theme);
     });
 
-    var codeMirrorConfig = {
-        lineNumbers: true,
-        lineWrapping: true,
-        mode: 'application/json',
-        theme: selector.value, // 主题
-        foldGutter: true,
-        gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-        placeholder: '输入JSON数据...',
-        extraKeys: {
-            "Ctrl-G": function(cm) {
-                cm.foldCode(cm.getCursor(), null, "fold");
-            },
-            "Ctrl-A": function(cm) {
-                cm.execCommand("foldAll");
-            }
-        }
-    };
-
     // 读取本地存储中的数据
     window.onload =  () => {
+        var codeMirrorConfig = {
+            lineNumbers: true,
+            lineWrapping: true,
+            mode: 'application/json',
+            theme: selector.value, // 主题
+            foldGutter: true,
+            gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
+            placeholder: '输入JSON数据...',
+            extraKeys: {
+                "Ctrl-G": function(cm) {
+                    cm.foldCode(cm.getCursor(), null, "fold");
+                },
+                "Ctrl-Y": function(cm) {
+                    cm.execCommand("foldAll");
+                }
+            }
+        };
+
         // 初始化 CodeMirror
         editor = CodeMirror.fromTextArea(document.getElementById('codemirror-textarea'), codeMirrorConfig);
 
