@@ -38,6 +38,10 @@
             }
         }
 
+        .red {
+            color: red;
+        }
+
         /* 美化输入框的默认样式 */
         input[type="text"], input[type="number"] {
             padding: 8px 12px;
@@ -80,6 +84,11 @@
             flex: 1;
         }
 
+        .flex-col {
+            flex: 1;
+            align-items: center;
+        }
+
         .form-row {
             display: flex;
             align-items: center;
@@ -93,7 +102,7 @@
             }
         }
 
-        #themeSelector {
+         #themeSelector {
             padding: 8px 16px;
             background-color: #4CAF50;
             color: white;
@@ -129,12 +138,72 @@
             min-height: 70vh; /* 设置最小高度 */
         }
 
+        #tutorialButton{
+            color: #007bff;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* 对话框样式 */
+        .dialog-overlay {
+            display: none;
+            position: fixed; /* 修改为 fixed 定位 */
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            overflow: auto;
+        }
+
+        .dialog-box {
+            background-color: #fefefe;
+            border: 1px solid #888;
+            border-radius: 8px;
+            max-width: 80%;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: auto;
+            position: absolute; /* 可以保持在页面中央 */
+            top: 50%; /* 从顶部 50% 开始 */
+            left: 50%; /* 从左侧 50% 开始 */
+            transform: translate(-50%, -50%); /* 将对话框向上和向左移动其宽度和高度的一半，从而使其在中心 */
+        }
+
+
+        .dialog-header {
+            text-align: right; /* 右对齐 */
+        }
+
+        .close-button {
+            cursor: pointer;
+        }
+
+        .dialog-content {
+            margin-top: 10px; /* 顶部留白 */
+            /* 添加您的富文本内容样式 */
+        }
+
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow: auto;
+        }
     </style>
 </head>
 <body>
 <div class="flex-container">
     <div class="left-edit">
-        <h4>JSON数据复制与字段增加 Ctrl+Y(收起所有代码)</h4>
+        <h4>
+            JSON数据
+            <span id="tutorialButton" class="tutorial-button">查看教程</span>
+        </h4>
         <div style="position: relative;">
             <textarea id="codemirror-textarea" placeholder="输入JSON数据..."></textarea>
             <select id="themeSelector">
@@ -154,7 +223,6 @@
         </div>
     </div>
 </div>
-<br>
 <div class="flex-container" id="container1">
     <div class="form-row">
         <label for="fieldName">指定字段名:</label>
@@ -177,6 +245,63 @@
     <button class="form-row add-field" onclick="addField('')">添加字段</button>
     <button class="form-row" onclick="processData()">复制并增加字段值</button>
 </div>
+
+<!-- 对话框容器 -->
+<div id="dialogOverlay" class="dialog-overlay">
+    <div id="dialogBox" class="dialog-box">
+        <div class="dialog-header">
+            <span id="closeButton" class="close-button">&times;</span>
+        </div>
+        <div class="dialog-content">
+            <!-- 富文本文档内容 -->
+            <h2>帮助文档</h2>
+            <h3>1、功能说明</h3>
+            <p>&nbsp;&nbsp;&nbsp;&nbsp;复制指定次数的JSON数据，可以指定多个字段名，在左侧编辑器输入数据，
+                右侧编辑器输出<b class="red">数组</b>数据。可以在左侧输入的数据中，使用占位符
+                <b class="red">{}</b>符号来指定值替换规则。</p>
+            <h3>2、快捷键</h3>
+            <p>Ctrl+Y：收起所有代码</p>
+            <p>Ctrl+G：收起当前光标所在的行的{}代码块</p>
+            <h3>3、使用示例</h3>
+            <p>在左侧输入下面的json数据，然后在下方的指定字段名输入框中输入
+                <b class="red">addtion.0.cpu</b>路径，然后输入其实数字31和复制次数1，然后输出结果如右下： </p>
+            <div class="flex-container">
+                <pre class="flex-col">{
+  "type": "a{}+b{}",
+  "price": "1200",
+  "addtion": [
+    {
+      "color": "blue",
+      "cpu": "m{}/v{}"
+    },
+    {
+      "color": "blue",
+      "cpu": "intel"
+    }
+  ]
+}
+</pre>
+                <pre class="flex-col">[
+  {
+    "type": "mobile",
+    "price": "1200",
+    "addtion": [
+      {
+        "color": "blue",
+        "cpu": "m31/v31"
+      },
+      {
+        "color": "blue",
+        "cpu": "intel"
+      }
+    ]
+  }
+]</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsonlint/1.6.0/jsonlint.min.js"></script>
 <script>
     var editor;
@@ -186,6 +311,29 @@
     selector.addEventListener("change", function () {
         var theme = this.value;
         changeTheme(theme);
+    });
+
+    // 获取对话框相关元素
+    var tutorialButton = document.getElementById('tutorialButton');
+    var dialogOverlay = document.getElementById('dialogOverlay');
+    var dialogBox = document.getElementById('dialogBox');
+    var closeButton = document.getElementById('closeButton');
+
+    // 显示对话框
+    tutorialButton.addEventListener('click', function() {
+        dialogOverlay.style.display = 'block';
+    });
+
+    // 关闭对话框
+    closeButton.addEventListener('click', function() {
+        dialogOverlay.style.display = 'none';
+    });
+
+    // 点击对话框外部区域也关闭对话框
+    window.addEventListener('click', function(event) {
+        if (event.target === dialogOverlay) {
+            dialogOverlay.style.display = 'none';
+        }
     });
 
     // 读取本地存储中的数据
