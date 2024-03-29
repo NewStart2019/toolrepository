@@ -62,12 +62,22 @@
         .flex-container {
             display: flex;
             justify-content: center;
+
             & + div {
                 margin-top: 20px;
             }
-            & button{
+
+            & button {
                 border-radius: 40px;
             }
+        }
+
+        .left-edit {
+            flex: 1;
+        }
+
+        .right-edit {
+            flex: 1;
         }
 
         .form-row {
@@ -77,6 +87,7 @@
             & label {
                 margin-right: 5px;
             }
+
             & input[type="number"] {
                 flex: 1;
             }
@@ -112,19 +123,37 @@
         .add-field {
             margin-right: 10px;
         }
+
+        .CodeMirror {
+            resize: vertical; /* 允许垂直方向调整大小 */
+            min-height: 650px; /* 设置最小高度 */
+        }
+
+
     </style>
 </head>
 <body>
-<h2>JSON数据复制与字段增加</h2>
-<div style="position: relative;">
-    <textarea id="codemirror-textarea" placeholder="输入JSON数据..."></textarea>
-    <select id="themeSelector">
-        <option value="darcula" selected>darcula</option>
-        <option value="idea">idea</option>
-        <option value="base16-day">Base16 Day</option>
-        <option value="material">Material</option>
-    </select>
-    <button class="beautifyJSON" onclick="beautifyJSON()">美化JSON数据</button>
+<div class="flex-container">
+    <div class="left-edit">
+        <h2>JSON数据复制与字段增加 Ctrl+Y(收起所有代码)</h2>
+        <div style="position: relative;">
+            <textarea id="codemirror-textarea" placeholder="输入JSON数据..."></textarea>
+            <select id="themeSelector">
+                <option value="darcula" selected>darcula</option>
+                <option value="idea">idea</option>
+                <option value="base16-day">Base16 Day</option>
+                <option value="material">Material</option>
+            </select>
+            <button class="beautifyJSON" onclick="beautifyJSON()">美化JSON数据</button>
+        </div>
+    </div>
+    <div class="right-edit">
+        <h2>输出结果:</h2>
+        <div style="position: relative;">
+            <textarea id="outputData" readonly></textarea>
+            <button class="copy-btn" onclick="copyOutputData()">复制</button>
+        </div>
+    </div>
 </div>
 <br>
 <div class="flex-container" id="container1">
@@ -149,13 +178,6 @@
     <button class="form-row add-field" onclick="addField('')">添加字段</button>
     <button class="form-row" onclick="processData()">复制并增加字段值</button>
 </div>
-<br>
-<h3>输出结果:</h3>
-<div style="position: relative;">
-    <textarea id="outputData" readonly></textarea>
-    <button class="copy-btn" onclick="copyOutputData()">复制</button>
-</div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsonlint/1.6.0/jsonlint.min.js"></script>
 <script>
     var editor;
@@ -168,7 +190,7 @@
     });
 
     // 读取本地存储中的数据
-    window.onload =  () => {
+    window.onload = () => {
         var codeMirrorConfig = {
             lineNumbers: true,
             lineWrapping: true,
@@ -178,10 +200,10 @@
             gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
             placeholder: '输入JSON数据...',
             extraKeys: {
-                "Ctrl-G": function(cm) {
+                "Ctrl-G": function (cm) {
                     cm.foldCode(cm.getCursor(), null, "fold");
                 },
-                "Ctrl-Y": function(cm) {
+                "Ctrl-Y": function (cm) {
                     cm.execCommand("foldAll");
                 }
             }
