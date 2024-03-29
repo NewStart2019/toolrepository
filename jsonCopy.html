@@ -125,17 +125,16 @@
         }
 
         .CodeMirror {
-            resize: vertical; /* 允许垂直方向调整大小 */
-            min-height: 650px; /* 设置最小高度 */
+            /*resize: vertical; !* 允许垂直方向调整大小 *!*/
+            min-height: 70vh; /* 设置最小高度 */
         }
-
 
     </style>
 </head>
 <body>
 <div class="flex-container">
     <div class="left-edit">
-        <h2>JSON数据复制与字段增加 Ctrl+Y(收起所有代码)</h2>
+        <h4>JSON数据复制与字段增加 Ctrl+Y(收起所有代码)</h4>
         <div style="position: relative;">
             <textarea id="codemirror-textarea" placeholder="输入JSON数据..."></textarea>
             <select id="themeSelector">
@@ -148,7 +147,7 @@
         </div>
     </div>
     <div class="right-edit">
-        <h2>输出结果:</h2>
+        <h4>输出结果:</h4>
         <div style="position: relative;">
             <textarea id="outputData" readonly></textarea>
             <button class="copy-btn" onclick="copyOutputData()">复制</button>
