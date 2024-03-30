@@ -102,7 +102,7 @@
             }
         }
 
-         #themeSelector {
+        #themeSelector {
             padding: 8px 16px;
             background-color: #4CAF50;
             color: white;
@@ -111,6 +111,7 @@
             position: absolute;
             top: 5px;
             right: 132px;
+            border-radius: 40px;
 
             &:hover {
                 background-color: #45a049;
@@ -138,7 +139,7 @@
             min-height: 70vh; /* 设置最小高度 */
         }
 
-        #tutorialButton{
+        #tutorialButton {
             color: #007bff;
             text-decoration: underline;
             cursor: pointer;
@@ -166,9 +167,8 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             overflow: auto;
             position: absolute; /* 可以保持在页面中央 */
-            top: 50%; /* 从顶部 50% 开始 */
             left: 50%; /* 从左侧 50% 开始 */
-            transform: translate(-50%, -50%); /* 将对话框向上和向左移动其宽度和高度的一半，从而使其在中心 */
+            transform: translate(-50%, -0%); /* 将对话框向上和向左移动其宽度和高度的一半，从而使其在中心 */
         }
 
 
@@ -252,19 +252,20 @@
         <div class="dialog-header">
             <span id="closeButton" class="close-button">&times;</span>
         </div>
-        <div class="dialog-content">
+        <div class="dialog-content" contenteditable>
             <!-- 富文本文档内容 -->
             <h2>帮助文档</h2>
             <h3>1、功能说明</h3>
-            <p>&nbsp;&nbsp;&nbsp;&nbsp;复制指定次数的JSON数据，可以指定多个字段名，在左侧编辑器输入数据，
+            <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;复制指定次数的JSON数据，可以指定多个字段名，在左侧编辑器输入数据，
                 右侧编辑器输出<b class="red">数组</b>数据。可以在左侧输入的数据中，使用占位符
                 <b class="red">{}</b>符号来指定值替换规则。</p>
             <h3>2、快捷键</h3>
-            <p>Ctrl+Y：收起所有代码</p>
-            <p>Ctrl+G：收起当前光标所在的行的{}代码块</p>
+            <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ctrl+Y：收起所有代码</p>
+            <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ctrl+G：收起当前光标所在的行的{}代码块</p>
             <h3>3、使用示例</h3>
-            <p>在左侧输入下面的json数据，然后在下方的指定字段名输入框中输入
-                <b class="red">addtion.0.cpu</b>路径，然后输入其实数字31和复制次数1，然后输出结果如右下： </p>
+            <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;在左侧编辑框中输入下面左侧的json数据，然后在下方的指定字段名输入框中输入
+                <b class="red">addtion.0.cpu</b>路径和<b class="red">type</b>，然后输入起始数字31、1和复制次数1，然后输出结果如右下：
+            </p>
             <div class="flex-container">
                 <pre class="flex-col">{
   "type": "a{}+b{}",
@@ -308,29 +309,23 @@
     var shower;
     // 绑定主题切换事件
     var selector = document.getElementById("themeSelector");
-    selector.addEventListener("change", function () {
+    selector.addEventListener("change",  () => {
         var theme = this.value;
-        changeTheme(theme);
+        editor.setOption("theme", theme);
+        shower.setOption("theme", theme);
     });
 
     // 获取对话框相关元素
     var tutorialButton = document.getElementById('tutorialButton');
     var dialogOverlay = document.getElementById('dialogOverlay');
-    var dialogBox = document.getElementById('dialogBox');
     var closeButton = document.getElementById('closeButton');
 
     // 显示对话框
-    tutorialButton.addEventListener('click', function() {
-        dialogOverlay.style.display = 'block';
-    });
-
+    tutorialButton.addEventListener('click', () => dialogOverlay.style.display = 'block');
     // 关闭对话框
-    closeButton.addEventListener('click', function() {
-        dialogOverlay.style.display = 'none';
-    });
-
+    closeButton.addEventListener('click', () => dialogOverlay.style.display = 'none');
     // 点击对话框外部区域也关闭对话框
-    window.addEventListener('click', function(event) {
+    window.addEventListener('click', event => {
         if (event.target === dialogOverlay) {
             dialogOverlay.style.display = 'none';
         }
@@ -492,7 +487,7 @@
             startIndexValues.push(parseInt(startIndex.value));
         });
 
-        localStorage.setItem('jsonData', jsonData);
+        localStorage.setItem('codemirror-textarea', jsonData);
         localStorage.setItem('fieldValues', fieldValues);
         localStorage.setItem('startIndexValues', startIndexValues);
 
@@ -530,12 +525,6 @@
         if (window.isSecureContext) {
             navigator.clipboard.writeText(shower.getValue());
         }
-    }
-
-    // 更改主题
-    function changeTheme(theme) {
-        editor.setOption("theme", theme);
-        shower.setOption("theme", theme);
     }
 
     var fieldCount = 1;
