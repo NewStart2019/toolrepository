@@ -309,7 +309,7 @@
     var shower;
     // 绑定主题切换事件
     var selector = document.getElementById("themeSelector");
-    selector.addEventListener("change",  () => {
+    selector.addEventListener("change",  function () {
         var theme = this.value;
         editor.setOption("theme", theme);
         shower.setOption("theme", theme);
