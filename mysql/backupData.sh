@@ -90,6 +90,9 @@ snowFlow() {
 
 # 获取 /dev/sda 磁盘的总空间 GB (定时任务的执行环境中没有设置正确的 PATH 变量，注意这里fdisk全路径)
 all=$(/usr/sbin/fdisk -l | grep "Disk /dev/sda" | awk '{print $3}')
+if [ -z "$all" ]; then
+    all=0
+fi
 #all=$(/usr/sbin/fdisk -l | grep "Disk /dev/sda" | awk '{print $2}' | awk -F\： '{print $2}')
 # 获取数据目录下面所占空间大小 MB
 data=$(du -sm /app | awk '{print $1}')
