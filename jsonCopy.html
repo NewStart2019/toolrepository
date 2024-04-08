@@ -244,6 +244,7 @@
     </div>
     <button class="form-row add-field" onclick="addField('')">添加字段</button>
     <button class="form-row" onclick="processData()">复制并增加字段值</button>
+    <button class="form-row" onclick="caseToLower()">指定字段转小写</button>
 </div>
 
 <!-- 对话框容器 -->
@@ -519,6 +520,56 @@
         } catch (error) {
             shower.setValue("处理数据时发生错误：" + error.message);
         }
+    }
+
+    function caseToLower(){
+        var jsonData = editor.getValue();
+        var copies = parseInt(document.getElementById('copies').value);
+        var outputData = document.getElementById('outputData');
+        outputData.value = "";
+
+        var fields = document.querySelectorAll('.flex-container input[class="fieldName"]');
+        var startIndices = document.querySelectorAll('.flex-container input[class="startIndex"]');
+
+        var fieldValues = [];
+        var startIndexValues = [];
+
+        fields.forEach(function (field) {
+            fieldValues.push(field.value);
+        });
+
+        startIndices.forEach(function (startIndex) {
+            startIndexValues.push(parseInt(startIndex.value));
+        });
+
+        localStorage.setItem('codemirror-textarea', jsonData);
+        localStorage.setItem('fieldValues', fieldValues);
+        localStorage.setItem('startIndexValues', startIndexValues);
+
+        var parsedData = JSON.parse(jsonData);
+        if (typeof parsedData !== 'object' || parsedData === null) {
+            throw new Error('输入的JSON数据必须是一个对象');
+        }
+        if (!Array.isArray(parsedData)){
+            alert("输入的JSON数据必须是一个数组");
+        }
+        // 遍历数组
+        for (var i = 0; i < parsedData.length; i++) {
+            var obj = parsedData[i];
+            // 遍历修改的字段
+            for (var j = 0; j < fieldValues.length; j++) {
+                fieldName = fieldValues[j];
+                startIndex = startIndexValues[j];
+
+                var valueByPath = getValueByPath(obj, fieldName);
+                if (valueByPath === undefined) {
+                    alert("JSON 数据中" + fieldName + "路径不存在字段名称：" + fieldName);
+                    continue;
+                }
+                setValueByPath(obj, fieldName, valueByPath.toLowerCase())
+            }
+        }
+        shower.setValue(JSON.stringify(parsedData, null, 2));
     }
 
     function copyOutputData() {
