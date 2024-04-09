@@ -257,9 +257,14 @@
             <!-- 富文本文档内容 -->
             <h2>帮助文档</h2>
             <h3>1、功能说明</h3>
-            <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;复制指定次数的JSON数据，可以指定多个字段名，在左侧编辑器输入数据，
-                右侧编辑器输出<b class="red">数组</b>数据。可以在左侧输入的数据中，使用占位符
-                <b class="red">{}</b>符号来指定值替换规则。</p>
+            <ul>
+                <li><p>复制指定次数的JSON数据，可以指定多个字段名，在左侧编辑器输入数据，
+                    右侧编辑器输出<b class="red">数组</b>数据。可以在左侧输入的数据中，使用占位符
+                    <b class="red">{}</b>符号来指定值替换规则。</p></li>
+                <li><p>将<b class="red">json</b>数据指定的所有出现过的字段数据中的<b class="red">大</b>
+                    写字母转换为<b class="red">小</b>写字母。点击<b class="red">指定字段转小写</b>按钮即可</p></li>
+            </ul>
+
             <h3>2、快捷键</h3>
             <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ctrl+Y：收起所有代码</p>
             <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ctrl+G：收起当前光标所在的行的{}代码块</p>
@@ -310,7 +315,7 @@
     var shower;
     // 绑定主题切换事件
     var selector = document.getElementById("themeSelector");
-    selector.addEventListener("change",  function () {
+    selector.addEventListener("change", function () {
         var theme = this.value;
         editor.setOption("theme", theme);
         shower.setOption("theme", theme);
@@ -468,6 +473,30 @@
         value[lastKey] = newValue;
     }
 
+
+    /**
+     * 遍历对象，将指定字段转换为小写
+     * @param obj json对象
+     * @param fieldNames 需要转换的对象
+     */
+    function traverseAndConvertToLower(obj, fieldNames) {
+        for (let key in obj) {
+            let objElement = obj[key];
+            if (Array.isArray(objElement)) {
+                for (let subElement of objElement) {
+                    traverseAndConvertToLower(subElement, fieldNames);
+                }
+            } else if (typeof objElement === 'object') {
+                traverseAndConvertToLower(obj[key], fieldNames);
+            } else {
+                if (fieldNames.includes(key)) {
+                    obj[key] = obj[key].toLowerCase();
+                }
+            }
+        }
+    }
+
+
     function processData() {
         var jsonData = editor.getValue();
         var copies = parseInt(document.getElementById('copies').value);
@@ -522,7 +551,7 @@
         }
     }
 
-    function caseToLower(){
+    function caseToLower() {
         var jsonData = editor.getValue();
         var copies = parseInt(document.getElementById('copies').value);
         var outputData = document.getElementById('outputData');
@@ -550,25 +579,7 @@
         if (typeof parsedData !== 'object' || parsedData === null) {
             throw new Error('输入的JSON数据必须是一个对象');
         }
-        if (!Array.isArray(parsedData)){
-            alert("输入的JSON数据必须是一个数组");
-        }
-        // 遍历数组
-        for (var i = 0; i < parsedData.length; i++) {
-            var obj = parsedData[i];
-            // 遍历修改的字段
-            for (var j = 0; j < fieldValues.length; j++) {
-                fieldName = fieldValues[j];
-                startIndex = startIndexValues[j];
-
-                var valueByPath = getValueByPath(obj, fieldName);
-                if (valueByPath === undefined) {
-                    alert("JSON 数据中" + fieldName + "路径不存在字段名称：" + fieldName);
-                    continue;
-                }
-                setValueByPath(obj, fieldName, valueByPath.toLowerCase())
-            }
-        }
+        traverseAndConvertToLower(parsedData, fieldValues);
         shower.setValue(JSON.stringify(parsedData, null, 2));
     }
 
