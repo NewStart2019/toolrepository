@@ -11,10 +11,10 @@ RUN apk add openjdk$VERSION
 RUN apk add sshpass
 
 # 创建目录
-RUN mkdir -p $HOME/.docker/
+RUN mkdir -p /root/.docker/
 RUN mkdir /root/.ssh && touch /root/.ssh/known_hosts
+COPY config.json /root/.docker/config.json
 
 RUN apk add gradle
 
-COPY init.gradle /root/.gradle/init.gradle
 COPY dockerDelete.sh /app/

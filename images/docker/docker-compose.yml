@@ -45,4 +45,4 @@ services:
       dockerfile: gradleDockerfile
       args:
         VERSION: 21
-    image: 172.16.0.145:8083/tool/docker/gradle-21:1.1
+    image: 172.16.0.145:8083/tool/docker/gradle-21:1.3
