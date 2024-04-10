@@ -9,7 +9,7 @@ services:
             TZ: Asia/Shanghai
         command:
           # 解决外部无法访问
-            --default-authentication-plugin=mysql_native_password
+            --default-authentication-plugin=caching_sha2_password
             --character-set-server=utf8mb4
             --collation-server=utf8mb4_general_ci
             --explicit_defaults_for_timestamp=true
@@ -19,6 +19,6 @@ services:
         ports:
             - 3306:3306
         volumes:
+            - /etc/localtime:/etc/localtime:ro
             - ./data:/var/lib/mysql
-            - ./conf/my.cnf:/etc/my.cnf
             - ./logs:/var/log
