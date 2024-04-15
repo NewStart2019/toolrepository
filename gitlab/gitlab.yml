@@ -11,12 +11,20 @@ services:
         nginx['listen_port'] = 8929
         gitlab_rails['gitlab_ssh_host'] = '172.16.0.145'
         gitlab_rails['gitlab_shell_ssh_port'] = 2224
+        postgresql['enable'] = false
+        gitlab_rails['db_adapter'] = 'postgresql'
+        gitlab_rails['db_encoding'] = 'utf8'
+        gitlab_rails['db_host'] = '172.16.0.197'
+        gitlab_rails['db_port'] = 5432
+        gitlab_rails['db_username'] = 'USERNAME'
+        gitlab_rails['db_password'] = 'PASSWORD'
       GITLAB_SKIP_UNMIGRATED_DATA_CHECK: 'true'
       TZ: "Asia/Shanghai"
     ports:
       - '8929:8929'
       - '2224:22'
       - "5432:5432"
+      - "8060:8060"
     volumes:
       - '/app/gitlab/config:/etc/gitlab'
       - '/app/gitlab/logs:/var/log/gitlab'
