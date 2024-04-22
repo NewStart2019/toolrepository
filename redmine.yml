@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  redmine:
+    image: redmine:latest
+    container_name: redmine
+    ports:
+      - "3000:3000"
+    environment:
+      TZ: Asia/Shanghai
+      REDMINE_PLUGINS_MIGRATE: "true"
+#      REDMINE_DB_MYSQL: "172.16.0.145:3306"
+#      REDMINE_DB_DATABASE: "redmine"
+#      REDMINE_DB_USERNAME: "root"
+#      REDMINE_DB_PASSWORD: "R_qNhdi5vo"
+    volumes:
+      - ./plugins:/usr/src/redmine/plugins
+      - ./themes:/usr/src/redmine/public/themes
+      - ./files:/usr/src/redmine/files
+      - ./temp:/usr/src/redmine/temp
+#      - ./config/:/usr/src/redmine/config
+
+
+# 启动容器，然后手动去 /usr/src/redmine/config/database.yml 修改数据库配置，第一次登录默认密码admin/admin

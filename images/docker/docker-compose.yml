@@ -27,6 +27,7 @@ services:
     build:
       context: .
       dockerfile: gradleDockerfile
+      network: host
       args:
         VERSION: 11
     image: 172.16.0.145:8083/tool/docker/gradle-11:1.1
@@ -35,6 +36,7 @@ services:
     build:
       context: .
       dockerfile: gradleDockerfile
+      network: host
       args:
         VERSION: 17
     image: 172.16.0.145:8083/tool/docker/gradle-17:1.1
@@ -43,6 +45,7 @@ services:
     build:
       context: .
       dockerfile: gradleDockerfile
+      network: host
       args:
         VERSION: 21
     image: 172.16.0.145:8083/tool/docker/gradle-21:1.3
