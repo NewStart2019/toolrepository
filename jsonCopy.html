@@ -230,7 +230,7 @@
     </div>
     <div class="form-row">
         <label for="startIndex">起始数字:</label>
-        <input type="number" class="startIndex" id="startIndex" value="1" min="1">
+        <input type="text" class="startIndex" id="startIndex" value="1" min="1">
     </div>
     <div class="form-row">
         <button onclick="addField('')">+</button>
@@ -243,8 +243,9 @@
         <input type="number" id="copies" value="1" min="1">
     </div>
     <button class="form-row add-field" onclick="addField('')">添加字段</button>
-    <button class="form-row" onclick="processData()">复制并增加字段值</button>
+    <button class="form-row" onclick="copData()">复制并增加字段值</button>
     <button class="form-row" onclick="caseToLower()">指定字段转小写</button>
+    <button class="form-row" onclick="addFix()">指定字段加前后缀</button>
 </div>
 
 <!-- 对话框容器 -->
@@ -263,6 +264,8 @@
                     <b class="red">{}</b>符号来指定值替换规则。</p></li>
                 <li><p>将<b class="red">json</b>数据指定的所有出现过的字段数据中的<b class="red">大</b>
                     写字母转换为<b class="red">小</b>写字母。点击<b class="red">指定字段转小写</b>按钮即可</p></li>
+                <li><p>将<b class="red">json</b>数据指定的所有出现过的字段数据中的值添加前缀<b class="red">前缀</b>
+                    。点击<b class="red">“指定字段加前后缀”</b>按钮即可</p></li>
             </ul>
 
             <h3>2、快捷键</h3>
@@ -473,7 +476,6 @@
         value[lastKey] = newValue;
     }
 
-
     /**
      * 遍历对象，将指定字段转换为小写
      * @param obj json对象
@@ -496,8 +498,30 @@
         }
     }
 
+    /**
+     * 正则处理
+     * @param obj json对象
+     * @param fieldName 需要处理的字段
+     * @param replaceValue 替换的数据
+     */
+    function regularProcessing(obj, fieldName, replaceValue) {
+        for (let key in obj) {
+            let objElement = obj[key];
+            if (Array.isArray(objElement)) {
+                for (let subElement of objElement) {
+                    regularProcessing(subElement, fieldName, replaceValue);
+                }
+            } else if (typeof objElement === 'object') {
+                regularProcessing(obj[key], fieldName, replaceValue);
+            } else {
+                if (fieldName === key) {
+                    obj[key] = ("{}"+obj[key]).replace(/{(.*?)}/g, replaceValue);
+                }
+            }
+        }
+    }
 
-    function processData() {
+    function getData() {
         var jsonData = editor.getValue();
         var copies = parseInt(document.getElementById('copies').value);
         var outputData = document.getElementById('outputData');
@@ -509,38 +533,45 @@
         var fieldValues = [];
         var startIndexValues = [];
 
-        fields.forEach(function (field) {
-            fieldValues.push(field.value);
-        });
+        fields.forEach(field => fieldValues.push(field.value));
 
-        startIndices.forEach(function (startIndex) {
-            startIndexValues.push(parseInt(startIndex.value));
-        });
+        startIndices.forEach(startIndex => startIndexValues.push(startIndex.value));
 
         localStorage.setItem('codemirror-textarea', jsonData);
         localStorage.setItem('fieldValues', fieldValues);
         localStorage.setItem('startIndexValues', startIndexValues);
+        return {
+            jsonData: jsonData,
+            copies: copies,
+            fieldValues: fieldValues,
+            startIndexValues: startIndexValues
+        }
+    }
 
+    function copData() {
+        var outputData = document.getElementById('outputData');
+        outputData.value = "";
+        let data = getData();
         try {
-            var parsedData = JSON.parse(jsonData);
+            var parsedData = JSON.parse(data.jsonData);
             if (typeof parsedData !== 'object' || parsedData === null) {
                 throw new Error('输入的JSON数据必须是一个对象');
             }
 
             var outputArray = []; // 存储处理后的 JSON 对象的数组
             var fieldName, startIndex;
-            for (var i = 0; i < copies; i++) {
+            for (var i = 0; i < data.copies; i++) {
                 var newData = JSON.parse(JSON.stringify(parsedData)); // Deep copy
-                for (var f = 0; f < fieldValues.length; f++) {
-                    fieldName = fieldValues[f];
-                    startIndex = startIndexValues[f];
+                for (var f = 0; f < data.fieldValues.length; f++) {
+                    fieldName = data.fieldValues[f];
+                    startIndex = data.startIndexValues[f];
 
                     var valueByPath = getValueByPath(newData, fieldName);
                     if (valueByPath === undefined) {
                         alert("JSON 数据中" + fieldName + "路径不存在字段名称：" + fieldName);
                         return;
                     }
-                    var result = valueByPath.replace(/{(.*?)}/g, startIndex + i);
+                    var result = valueByPath.replace(/{(.*?)}/g, parseInt(startIndex) + i);
                     setValueByPath(newData, fieldName, result)
                 }
                 outputArray.push(newData); // 将处理后的 JSON 对象存入数组
@@ -552,34 +583,25 @@
     }
 
     function caseToLower() {
-        var jsonData = editor.getValue();
-        var copies = parseInt(document.getElementById('copies').value);
-        var outputData = document.getElementById('outputData');
-        outputData.value = "";
-
-        var fields = document.querySelectorAll('.flex-container input[class="fieldName"]');
-        var startIndices = document.querySelectorAll('.flex-container input[class="startIndex"]');
-
-        var fieldValues = [];
-        var startIndexValues = [];
-
-        fields.forEach(function (field) {
-            fieldValues.push(field.value);
-        });
-
-        startIndices.forEach(function (startIndex) {
-            startIndexValues.push(parseInt(startIndex.value));
-        });
-
-        localStorage.setItem('codemirror-textarea', jsonData);
-        localStorage.setItem('fieldValues', fieldValues);
-        localStorage.setItem('startIndexValues', startIndexValues);
-
-        var parsedData = JSON.parse(jsonData);
+        let data = getData();
+        var parsedData = JSON.parse(data.jsonData);
         if (typeof parsedData !== 'object' || parsedData === null) {
             throw new Error('输入的JSON数据必须是一个对象');
         }
-        traverseAndConvertToLower(parsedData, fieldValues);
+        traverseAndConvertToLower(parsedData, data.fieldValues);
+        shower.setValue(JSON.stringify(parsedData, null, 2));
+    }
+
+    function addFix() {
+        var data = getData();
+        var parsedData = JSON.parse(data.jsonData);
+        if (typeof parsedData !== 'object' || parsedData === null) {
+            throw new Error('输入的JSON数据必须是一个对象');
+        }
+        debugger
+        for (var i = 0; i < data.fieldValues.length; i++) {
+            regularProcessing(parsedData, data.fieldValues[i], data.startIndexValues[i]);
+        }
         shower.setValue(JSON.stringify(parsedData, null, 2));
     }
 
@@ -622,7 +644,7 @@
         label2.textContent = "起始数字:";
         fieldRow2.appendChild(label2);
         var input2 = document.createElement("input");
-        input2.type = "number";
+        input2.type = "text";
         input2.classList.add("startIndex");
         input2.value = startIndex;
         input2.min = "1";
