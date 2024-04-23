@@ -43,7 +43,7 @@
         }
 
         /* 美化输入框的默认样式 */
-        input[type="text"], input[type="number"] {
+        select, input[type="text"], input[type="number"] {
             padding: 8px 12px;
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -52,7 +52,7 @@
         }
 
         /* 输入框获取焦点时的样式 */
-        input[type="text"]:focus, input[type="number"]:focus {
+        select, input[type="text"]:focus, input[type="number"]:focus {
             outline: none;
             border-color: #007bff;
             box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
@@ -225,19 +225,20 @@
 </div>
 <div class="flex-container" id="container1">
     <div class="form-row">
-        <label for="fieldName">指定字段名:</label>
-        <input type="text" class="fieldName" id="fieldName" placeholder="children.[0].field">
+        <input type="text" class="fieldName" id="fieldName" placeholder="指定字段名">
     </div>
     <div class="form-row">
-        <label for="startIndex">起始数字:</label>
-        <input type="text" class="startIndex" id="startIndex" value="1" min="1">
+        <input type="text" class="startIndex" id="startIndex" placeholder="起始数字/前后缀的名称">
     </div>
-<!--    <div class="form-row">-->
-<!--        <select id="transfer">-->
-<!--            <option value="1">转大写字母</option>-->
-<!--            <option value="2">转小写字母</option>-->
-<!--        </select>-->
-<!--    </div>-->
+    <div class="form-row">
+        <select id="transfer">
+            <option value="1">转小写字母</option>
+            <option value="2">转大写字母</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <input type="text" class="fix" id="fix" placeholder="前|后缀值">
+    </div>
     <div class="form-row">
         <button onclick="addField('')">+</button>
         <button onclick="deleteRow(this)">-</button>
@@ -521,7 +522,7 @@
                 regularProcessing(obj[key], fieldName, replaceValue);
             } else {
                 if (fieldName === key) {
-                    obj[key] = ("{}"+obj[key]).replace(/{(.*?)}/g, replaceValue);
+                    obj[key] = ("{}" + obj[key]).replace(/{(.*?)}/g, replaceValue);
                 }
             }
         }
@@ -620,43 +621,59 @@
     var fieldCount = 1;
 
     function addField(fieldName, startIndex) {
-        fieldCount++;
-
         var container1 = document.getElementById('container2'); // 获取容器1
         var newContainer = document.createElement('div'); // 创建新的容器
         newContainer.className = 'flex-container'; // 添加类名
 
         var fieldRow = document.createElement('div'); // 创建字段行
         fieldRow.className = 'form-row'; // 添加类名
-
-        var label = document.createElement('label'); // 创建标签
-        label.setAttribute('for', 'fieldName' + fieldCount); // 设置标签的属性
-        label.textContent = '指定字段名:';
-        fieldRow.appendChild(label); // 将标签添加到字段行中
-
         var input = document.createElement('input'); // 创建输入框
         input.setAttribute('type', 'text'); // 设置输入框的类型
         input.value = fieldName;
+        input.placeholder = "指定字段名";
         input.setAttribute('id', 'fieldName' + fieldCount); // 设置输入框的 id
         input.classList.add('fieldName');
-        input.setAttribute('placeholder', '字段名'); // 设置输入框的占位符
         fieldRow.appendChild(input); // 将输入框添加到字段行中
 
         newContainer.appendChild(fieldRow); // 将字段行添加到新的容器中
 
         var fieldRow2 = document.createElement('div'); // 创建字段行
         fieldRow2.className = 'form-row'; // 添加类名
-        var label2 = document.createElement("label");
-        label2.textContent = "起始数字:";
-        fieldRow2.appendChild(label2);
         var input2 = document.createElement("input");
         input2.type = "text";
+        input2.placeholder = "起始数字/前后缀的名称";
         input2.classList.add("startIndex");
-        input2.value = startIndex;
-        input2.min = "1";
         fieldRow2.appendChild(input2);
 
         newContainer.appendChild(fieldRow2); // 将字段行添加到新的容器中
+
+        var fieldRow5 = document.createElement('div'); // 创建字段行
+        fieldRow5.className = 'form-row'; // 添加类名
+        var selectElement = document.createElement("select");
+        fieldRow5.appendChild(selectElement);
+        selectElement.id = "transfer";
+        // 创建<option>元素，设置其值和文本内容
+        var option1 = document.createElement("option");
+        option1.value = "1";
+
+        option1.textContent = "转小写字母";
+        var option2 = document.createElement("option");
+        option2.value = "2";
+        option2.textContent = "转大写字母";
+        // 将<option>元素添加为<select>元素的子元素
+        selectElement.appendChild(option1);
+        selectElement.appendChild(option2);
+        newContainer.appendChild(fieldRow5); // 将字段行添加到新的容器中
+
+        var fieldRow6 = document.createElement('div'); // 创建字段行
+        fieldRow6.className = 'form-row'; // 添加类名
+        input2 = document.createElement("input");
+        input2.type = "text";
+        input2.id = "fix";
+        input2.classList.add("fix");
+        input2.placeholder = "前|后缀值";
+        fieldRow6.appendChild(input2);
+        newContainer.appendChild(fieldRow6);
 
         var fieldRow3 = document.createElement('div'); // 创建字段行
         fieldRow2.className = 'form-row'; // 添加类名
@@ -674,10 +691,16 @@
         container1.parentNode.insertBefore(newContainer, container2);
         // 将新的容器插入到 container1.nextSibling
         // container1.parentNode.insertBefore(newContainer, container1.nextSibling);
+
+        fieldCount++;
     }
 
     // 删除当前行
     function deleteRow(button) {
+        if (fieldCount <= 1) {
+            alert("最后一行不能删除");
+            return;
+        }
         var formRow = button.parentNode.parentNode;
         formRow.parentNode.removeChild(formRow);
         fieldCount--;
