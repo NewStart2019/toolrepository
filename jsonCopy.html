@@ -269,8 +269,8 @@
                 <li><p>复制指定次数的JSON数据，可以指定多个字段名，在左侧编辑器输入数据，
                     右侧编辑器输出<b class="red">数组</b>数据。可以在左侧输入的数据中，使用占位符
                     <b class="red">{}</b>符号来指定值替换规则。</p></li>
-                <li><p>将<b class="red">json</b>数据指定的所有出现过的字段数据中的<b class="red">大</b>
-                    写字母转换为<b class="red">小</b>写字母。点击<b class="red">指定字段转小写</b>按钮即可</p></li>
+                <li><p>将<b class="red">json</b>数据指定的所有出现过的字段数据中的<b class="red">大小写字母</b>
+                    互相转换</li>
                 <li><p>将<b class="red">json</b>数据指定的所有出现过的字段数据中的值添加前缀<b class="red">前缀</b>
                     。点击<b class="red">“指定字段加前后缀”</b>按钮即可</p></li>
             </ul>
@@ -490,7 +490,6 @@
      * @param isUppercase 是否大写，true：转换为大写字母，false：转换为小写字母
      */
     function convertLetter(obj, fieldNames, isUppercase) {
-        debugger
         for (let key in obj) {
             let objElement = obj[key];
             if (Array.isArray(objElement)) {
@@ -512,6 +511,7 @@
      * @param obj json对象
      * @param fieldName 需要处理的字段
      * @param replaceValue 替换的数据
+     * @param flag 是否是前缀
      */
     function regularProcessing(obj, fieldName, replaceValue) {
         for (let key in obj) {
@@ -525,6 +525,31 @@
             } else {
                 if (fieldName === key) {
                     obj[key] = ("{}" + obj[key]).replace(/{(.*?)}/g, replaceValue);
+                }
+            }
+        }
+    }
+
+    /**
+     * 正则处理
+     * @param obj json对象
+     * @param fieldName 需要处理的字段
+     * @param replaceValue 替换的数据
+     * @param flag 是否是前缀
+     */
+    function addSuffixOrPrefix(obj, fieldName, replaceValue, flag) {
+        for (let key in obj) {
+            let objElement = obj[key];
+            if (Array.isArray(objElement)) {
+                for (let subElement of objElement) {
+                    addSuffixOrPrefix(subElement, fieldName, replaceValue, flag);
+                }
+            } else if (typeof objElement === 'object') {
+                addSuffixOrPrefix(obj[key], fieldName, replaceValue, flag);
+            } else {
+                if (fieldName === key) {
+                    obj[key] = flag ? "{}" + obj[key] : obj[key] + "{}";
+                    obj[key] = obj[key].replace(/{(.*?)}/g, replaceValue);
                 }
             }
         }
@@ -606,7 +631,9 @@
         if (typeof parsedData !== 'object' || parsedData === null) {
             throw new Error('输入的JSON数据必须是一个对象');
         }
-        convertLetter(parsedData, data.fieldValues, data.transferValues[0] == 2);
+        for (var i = 0; i < data.fieldValues.length; i++) {
+            convertLetter(parsedData, [data.fieldValues[i]], data.transferValues[i] == 2);
+        }
         shower.setValue(JSON.stringify(parsedData, null, 2));
     }
 
@@ -617,7 +644,8 @@
             throw new Error('输入的JSON数据必须是一个对象');
         }
         for (var i = 0; i < data.fieldValues.length; i++) {
-            regularProcessing(parsedData, data.fieldValues[i], data.fixValues[i]);
+            debugger
+            addSuffixOrPrefix(parsedData, data.fieldValues[i], data.fixValues[i], data.transferValues[i] == 1);
         }
         shower.setValue(JSON.stringify(parsedData, null, 2));
     }
