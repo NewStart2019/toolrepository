@@ -1,0 +1,97 @@
+stages:
+  # 下载依赖包、构建项目
+  # - build
+  # 测试项目是否能够运行
+  - check
+  # 准备：打包镜像，上传仓库,删除目标服务器；指定版本的容器、镜像
+  #- prepare
+  # 部署：传递docker-compose文件，构建容器
+  - run
+  - proxy
+
+sonarqube_check:
+  tags:
+    - default
+  stage: check
+  when: manual
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
+  variables:
+    SONAR_HOST_URL: http://${DEVOPS_IP}:9002
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+    GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script:
+    - sonar-scanner
+  allow_failure: true
+  only:
+    - master
+    - dev
+    - merge_request
+
+variables:
+  TARGET_SERVER: $DEV_IP
+.common-ssh-script-before: &common-ssh-script-before
+  - if [ "${CI_COMMIT_REF_NAME}" = "master" -o "${CI_COMMIT_REF_NAME}" = "main" ]; then
+      TARGET_SERVER=${PRO_IP};
+      PROFILES_ACTIVE="prod";
+      echo "当前正在部署正式系统${TARGET_SERVER}";
+    elif [ "${CI_COMMIT_REF_NAME}" = "test" ]; then
+      TARGET_SERVER=${TEST_IP};
+      PROFILES_ACTIVE="test";
+      echo "当前正在部署测试系统${TARGET_SERVER}";
+    else
+      echo "当前正在部署开发环境系统${TARGET_SERVER}";
+    fi
+  - ssh-keyscan -t rsa $TARGET_SERVER >> /root/.ssh/known_hosts
+
+
+# 执行对应的脚本
+deploy_run:
+  tags:
+    - default
+  stage: run
+  image: ${DOCKER_REPOSITORY}/tool/nvm:1.5.5
+  variables:
+    CACHE_KEY: "$PROJECT_NANE-$CI_COMMIT_REF_NAME"
+    PROJECT_NANE: $CI_PROJECT_NAME
+    ROOT_PATH: "/app/$PROJECT_NANE"
+    NPM_VERSION: 18.19.0
+  when: manual
+  before_script:
+    - *common-ssh-script-before
+    - git checkout -q $CI_COMMIT_SHA
+    - source /root/.bashrc
+  script:
+    - echo "指定镜像版本NPM_VERSION=$NPM_VERSION……"
+    - source /app/nvm_version_change.sh $NPM_VERSION
+    - npm install --registry=http://${DEVOPS_IP}:5001/repository/npm-group/
+    - export NODE_OPTIONS=--max-old-space-size=8192 && npm run build
+    - sshpass -p $PASSWORD ssh $USER@$TARGET_SERVER "if [ ! -d "$ROOT_PATH/dist" ]; then mkdir -p $ROOT_PATH; fi;"
+    - sshpass -p $PASSWORD scp -rp dist/ $USER@$TARGET_SERVER:$ROOT_PATH
+    - echo "部署完成"
+  cache:
+    key: $CACHE_KEY
+    paths:
+      - node_modules/
+      - package-lock.json
+
+nginx_proxy:
+  tags:
+    - default
+  stage: proxy
+  when: manual
+  image: ${DOCKER_REPOSITORY}/alpine_sshpass:1.11
+  variables:
+    GIT_STRATEGY: clone
+  before_script:
+    - *common-ssh-script-before
+  script:
+    # 配置文件移动过去 mkdir -p /etc/nginx/conf.d
+    - sshpass -p $PASSWORD ssh $USER@$TARGET_SERVER 'path=/etc/nginx/conf.d; if [ ! -d $path ]; then mkdir -p $path; fi'
+    - sshpass -p $PASSWORD scp -rp ./bin/conf/*.conf $USER@$TARGET_SERVER:/etc/nginx/conf.d
+    - sshpass -p $PASSWORD ssh $USER@$TARGET_SERVER 'sudo bash -s' < ./bin/nginx.sh $TARGET_SERVER
