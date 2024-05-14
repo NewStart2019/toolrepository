@@ -37,3 +37,4 @@ out/
 /src/main/resources/rebel.xml
 /tmp/
 /logs/
+bin/jtjc/*.exe
