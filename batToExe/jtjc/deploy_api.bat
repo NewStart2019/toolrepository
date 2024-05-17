@@ -58,6 +58,7 @@ set endTime=%TIME%
 call :GetTimeDiff startTime endTime totalTime
 
 echo Total time spent: %totalTime%
+pause
 exit /b
 
 :GetTimeDiff start end diff
