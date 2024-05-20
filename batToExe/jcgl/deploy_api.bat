@@ -10,8 +10,7 @@
 chcp 65001 > nul
 
 set startTime=%TIME%
-set PROJECT_NAME=stc-jtjc
-
+set PROJECT_NAME=stc-jcgl
 
 set target=%1
 @rem 检查第一个参数是否存在
@@ -24,31 +23,14 @@ if "%1"=="" (
     set target=dev
 )
 
-@rem  docker daemon is not running 添加这个功能
-tasklist | findstr docker > NUL
-if "%ERRORLEVEL%"=="0" (
-    echo Docker Daemon is already running.
-) else (
-    echo Docker Daemon is not running. Starting Docker Daemon...
-    start "" "C:\Program Files\Docker\Docker\resources\dockerd.exe"
-    if "%ERRORLEVEL%"=="0" (
-        echo Docker Daemon started successfully.
-    ) else (
-        echo Failed to start Docker Daemon. Please start docker manually
-        exit /b
-    )
-)
-
-@rem 记录当前提交的 git log
-
 @rem 执行你的命令
 if "%OS%"=="Windows_NT" @setlocal
 set current_path=%~dp0
 cd "%current_path%.."
 call gradlew.bat clean bootJar -x test
-move build\libs\stc-jtjc-latest.jar %current_path%..\bin
-call docker-compose -f bin\docker-compose-stc-jtjc.yml build
-call docker-compose -f bin\docker-compose-stc-jtjc.yml push -q
+move build\libs\%PROJECT_NAME%-latest.jar %current_path%..\bin
+call docker-compose -f bin\docker-compose-%PROJECT_NAME%.yml build
+call docker-compose -f bin\docker-compose-%PROJECT_NAME%.yml push -q
 
 call :find_IP currentIP
 
@@ -59,14 +41,20 @@ if "%target%"=="dev" (
     set password=Zjzx123!
 ) else (
     set username=root
-    set ip=172.16.0.226
-    set password=JKgTh4bPyyput9j8
+    set ip=172.16.0.83
+    set password=94whI23VucJWqqBm
+)
+
+@rem 默认发布正式环境分支都是master，其他分支默认都是发布测试环境
+if "%target%"=="prod" (
+    git checkout master
+    git pull origin master
 )
 
 @rem 发布代码：判断时测试环境还是正式环境，然后设置ip
-call sshpass -p %password% scp -p bin\docker-compose-stc-jtjc.yml %username%@%ip%:/app/stc-jtjc
-call sshpass -p %password% ssh  %username%@%ip% "if [ ! -d \"/app/stc-jtjc/log\" ]; then mkdir -p /app/stc-jtjc/log; fi;"
-call sshpass -p %password% ssh  %username%@%ip% "docker-compose -f /app/stc-jtjc/docker-compose-stc-jtjc.yml pull -q; docker-compose -f /app/stc-jtjc/docker-compose-stc-jtjc.yml up -d;"
+call sshpass -p %password% scp -p bin\docker-compose-%PROJECT_NAME%.yml %username%@%ip%:/app/%PROJECT_NAME%
+call sshpass -p %password% ssh  %username%@%ip% "if [ ! -d \"/app/%PROJECT_NAME%/log\" ]; then mkdir -p /app/%PROJECT_NAME%/log; fi;"
+call sshpass -p %password% ssh  %username%@%ip% "docker-compose -f /app/%PROJECT_NAME%/docker-compose-%PROJECT_NAME%.yml pull -q; docker-compose -f /app/%PROJECT_NAME%/docker-compose-%PROJECT_NAME%.yml up -d;"
 
 call :get_time datetime
 for /f "tokens=*" %%i in ('git log --oneline -n 1 HEAD') do set git_log=%%i

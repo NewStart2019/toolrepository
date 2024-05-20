@@ -1,17 +1,12 @@
 @rem 本地自动化部署脚本
-@rem 前提条件本地安装 docker、docker-compose
 @rem 实现目标：
-@rem 1. 本地打包最新的 jar包 ，右侧gradle插件 → stc-jtjc → Tasks → build → bootJar
-@rem 2. 构建 docker 镜像, 永久配置登录信息 在用户目录下/.docker/config 添加
-@rem 4. 推送镜像到镜像仓库172.16.0.197:8083。需要提前登录镜像仓库。
-@rem 5. 目标服务器启动 docker 容器
+@rem 1. 本地下载依赖打包
+@rem 2. 自动部署到目标服务器
 
 @echo off
 chcp 65001 > nul
 
 set startTime=%TIME%
-set PROJECT_NAME=stc-jtjc
-
 
 set target=%1
 @rem 检查第一个参数是否存在
@@ -24,31 +19,28 @@ if "%1"=="" (
     set target=dev
 )
 
-@rem  docker daemon is not running 添加这个功能
-tasklist | findstr docker > NUL
-if "%ERRORLEVEL%"=="0" (
-    echo Docker Daemon is already running.
-) else (
-    echo Docker Daemon is not running. Starting Docker Daemon...
-    start "" "C:\Program Files\Docker\Docker\resources\dockerd.exe"
-    if "%ERRORLEVEL%"=="0" (
-        echo Docker Daemon started successfully.
-    ) else (
-        echo Failed to start Docker Daemon. Please start docker manually
-        exit /b
-    )
-)
-
-@rem 记录当前提交的 git log
-
 @rem 执行你的命令
 if "%OS%"=="Windows_NT" @setlocal
 set current_path=%~dp0
 cd "%current_path%.."
-call gradlew.bat clean bootJar -x test
-move build\libs\stc-jtjc-latest.jar %current_path%..\bin
-call docker-compose -f bin\docker-compose-stc-jtjc.yml build
-call docker-compose -f bin\docker-compose-stc-jtjc.yml push -q
+set DEVOPS_IP=172.16.0.197
+set PROJECT_NAME=stc-jcgl-web
+
+@rem 默认发布正式环境分支都是master最新代码，其他分支默认都是发布测试环境
+if "%target%"=="prod" (
+    git checkout master
+    git pull origin master
+)
+
+call npm install --registry=http://%DEVOPS_IP%:5001/repository/npm-group/
+call npm run build
+rem 检查上一条命令的执行结果
+if %ERRORLEVEL% neq 0 (
+    color 4
+    echo Build failed, please fix the errors and retry!
+)
+
+
 
 call :find_IP currentIP
 
@@ -59,19 +51,17 @@ if "%target%"=="dev" (
     set password=Zjzx123!
 ) else (
     set username=root
-    set ip=172.16.0.226
-    set password=JKgTh4bPyyput9j8
+    set ip=172.16.0.83
+    set password=94whI23VucJWqqBm
 )
 
+call sshpass -p %password% ssh %username%@%ip% "if [ ! -d \"/app/%PROJECT_NAME%/log\" ]; then mkdir -p /app/%PROJECT_NAME%/log; fi;"
 @rem 发布代码：判断时测试环境还是正式环境，然后设置ip
-call sshpass -p %password% scp -p bin\docker-compose-stc-jtjc.yml %username%@%ip%:/app/stc-jtjc
-call sshpass -p %password% ssh  %username%@%ip% "if [ ! -d \"/app/stc-jtjc/log\" ]; then mkdir -p /app/stc-jtjc/log; fi;"
-call sshpass -p %password% ssh  %username%@%ip% "docker-compose -f /app/stc-jtjc/docker-compose-stc-jtjc.yml pull -q; docker-compose -f /app/stc-jtjc/docker-compose-stc-jtjc.yml up -d;"
+call sshpass -p %password% scp -rp dist/* %username%@%ip%:/app/%PROJECT_NAME%/dist
 
 call :get_time datetime
-for /f "tokens=*" %%i in ('git log --oneline -n 1 HEAD') do set git_log=%%i
-call sshpass -p %password% ssh  %username%@%ip% "echo Deployment for user with " %currentIP% " was successful, deployment time is: " %datetime% ". The Git log for the deployment is: " %git_log% ">> /app/%PROJECT_NAME%/log/deploy.log;"
-@rem call docker image prune -a -f
+call sshpass -p %password% ssh  %username%@%ip% "echo Deployment for user with %currentIP% was successful\, deployment time is：%datetime% >> /app/%PROJECT_NAME%/log/deploy.log;"
+
 set endTime=%TIME%
 
 @rem 计算时间差
