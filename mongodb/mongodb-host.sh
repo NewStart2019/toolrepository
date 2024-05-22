@@ -3,14 +3,20 @@
 
 root_dir=/app/mongodb
 
-if [[ -e /etc/yum.repos.d/mongodb-org-7.repo ]]; then
-# Add MongoDB repository
-echo "[mongodb-org-7.0]
-name=MongoDB Repository
-baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/7.0/x86_64/
-gpgcheck=1
-enabled=1
-gpgkey=https://www.mongodb.org/static/pgp/server-7.0.asc" | sudo tee /etc/yum.repos.d/mongodb-org-7.repo
+if [[ ! -e /etc/yum.repos.d/mongodb-org-7.repo ]]; then
+  # Add MongoDB repository
+  echo "[mongodb-org-7.0]
+  name=MongoDB Repository
+  baseurl=https://repo.mongodb.org/yum/redhat/\$releasever/mongodb-org/7.0/x86_64/
+  gpgcheck=1
+  enabled=1
+  gpgkey=https://www.mongodb.org/static/pgp/server-7.0.asc" | sudo tee /etc/yum.repos.d/mongodb-org-7.repo
+
+fi
+
+if [[ -e /usr/bin/mongod ]]; then
+  echo mongodb is already installed
+  exit 0
 fi
 
 # Install MongoDB
@@ -20,10 +26,14 @@ sudo sed -i 's#path: /var/log/mongodb/mongod.log#path: /app/mongodb/mongod.log#g
 sudo sed -i 's#dbPath: /var/lib/mongo#dbPath: /app/mongodb/data#g' /etc/mongod.conf
 sudo sed -i 's#bindIp: 127.0.0.1#bindIp: 0.0.0.0#g' /etc/mongod.conf
 sudo sed -i 's##security:##security:\n  authorization: enabled#g' /etc/mongod.conf
-sudo sed -i 's#User=mongod#User=root#g; s#Group=mongod#Group=root#g' /usr/lib/systemd/system/minio.service
+sudo sed -i 's#User=mongod#User=root#g; s#Group=mongod#Group=root#g' /usr/lib/systemd/system/mongod.service
 
 if [ ! -d "$root_dir/data" ]; then
   mkdir -p $root_dir/data
+fi
+
+if [[ ! -e $root_dir/mongod.log ]]; then
+  echo "" > $root_dir/mongod.log
 fi
 
 sudo systemctl daemon-reload
@@ -33,3 +43,7 @@ sudo systemctl start mongod
 sudo systemctl enable mongod
 # Check MongoDB status
 sudo systemctl status mongod
+
+# 卸载mongodb
+# sudo yum remove -y mongodb-org
+# rpm -e --nodeps $(rpm -qa | grep mongo)
