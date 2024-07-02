@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/numeric/1.2.6/numeric.min.js"></script>-->
+</head>
+<body>
+<script>
+
+    <!--  求解一元三次方程的根  -->
+    function solveCubic(a, b, c, d) {
+        if (a === 0) {
+            throw new Error("Coefficient 'a' must not be zero.");
+        }
+
+        // Normalize coefficients
+        b /= a;
+        c /= a;
+        d /= a;
+        debugger
+        const p = (3 * c - b * b) / 3;
+        const q = (2 * b * b * b - 9 * b * c + 27 * d) / 27;
+        const discriminant = (q * q) / 4 + (p * p * p) / 27;
+
+        const roots = [];
+
+        if (discriminant > 0) {
+            const u = Math.cbrt(-q / 2 + Math.sqrt(discriminant));
+            const v = Math.cbrt(-q / 2 - Math.sqrt(discriminant));
+            roots.push(u + v - b / 3);
+        } else if (discriminant === 0) {
+            const u = Math.cbrt(-q / 2);
+            roots.push(2 * u - b / 3);
+            roots.push(-u - b / 3);
+        } else {
+            const r = Math.sqrt((q * q) / 4 + Math.abs(discriminant));
+            const phi = Math.acos(-q / (2 * r));
+            const root1 = 2 * Math.cbrt(r) * Math.cos(phi / 3) - b / 3;
+            const root2 = 2 * Math.cbrt(r) * Math.cos((phi + 2 * Math.PI) / 3) - b / 3;
+            const root3 = 2 * Math.cbrt(r) * Math.cos((phi + 4 * Math.PI) / 3) - b / 3;
+            roots.push(root1, root2, root3);
+        }
+
+        return roots;
+    }
+
+    // 测试用例
+    // const a = 2;
+    // const b = 3;
+    // const c = -11;
+    // const d = 6;
+
+    const roots = solveCubic(0.030309268,-0.433029288,1.994017748,-2.937230624);
+
+    console.log("方程的根为:");
+    roots.forEach(root => {
+        console.log(root);
+    });
+
+</script>
+</body>
+</html>

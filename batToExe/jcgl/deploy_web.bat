@@ -32,7 +32,7 @@ if "%target%"=="prod" (
     git pull origin master
 )
 
-call npm install --registry=http://%DEVOPS_IP%:5001/repository/npm-group/
+call npm install --registry=https://registry.npmmirror.com/
 call npm run build
 rem 检查上一条命令的执行结果
 if %ERRORLEVEL% neq 0 (

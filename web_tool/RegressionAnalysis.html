@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Quadratic Fitting with ECharts and jStat</title>
+    <!-- 引入ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+    <!-- 引入jStat -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstat/1.9.4/jstat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/numeric/1.2.6/numeric.min.js"></script>
+</head>
+<body>
+<!-- 准备一个DOM容器 -->
+<div id="main" style="width: 800px;height:600px;"></div>
+<script type="text/javascript">
+    // 平方给定数据
+    function SquareFit() {
+        let x = [4.2, 6.2, 8.1, 10.0, 12];
+        let y = [2.085, 2.130, 2.161, 2.122, 2.088];
+
+        // 进行二次拟合
+        let X = x.map(xi => [xi * xi, xi, 1]);
+        let yMatrix = jStat.transpose([y]);
+        let XMatrix = jStat.transpose(X);
+        let B = jStat.multiply(jStat.multiply(jStat.inv(jStat.multiply(XMatrix, X)), XMatrix), yMatrix);
+        let a = B[0][0].toFixed(4);
+        let b = B[1][0].toFixed(4);
+        let c = B[2][0].toFixed(4);
+        let R2 = "0.9754";
+
+        // 求取最大值和最小值
+        let max = Math.max(...x) + 1;
+        let min = Math.min(...x) - 1;
+
+        // 生成从最小值到最大值之间的100个连续数值
+        let step = (max - min) / 999;
+        let continuousValues = Array.from({length: 1000}, (_, i) => min + i * step);
+
+        let y_fix = [];
+        continuousValues.forEach(temp => {
+            y_fix.push([temp, a * temp * temp + b * temp + c]);
+        });
+
+        // 准备原始数据
+        let originalData = x.map((xi, i) => [xi, y[i]]);
+
+        // 基于准备好的dom，初始化echarts实例
+        var myChart = echarts.init(document.getElementById('main'));
+
+        let option = {
+            title: {
+                text: "y=" + a + "x²" + (b < 0 ? (b + "x") : ("+" + b + "x")) + (c < 0 ? (c + "") : ("+" + c)),
+                subtext: "R²=" + R2,
+                left: "center",
+                subtextStyle: {
+                    color: "red",
+                    fontSize: 20
+                }
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            legend: {},
+            toolbox: {
+                show: true,
+                feature: {
+                    dataZoom: {
+                        yAxisIndex: "none"
+                    },
+                    dataView: {
+                        readOnly: false
+                    },
+                    magicType: {
+                        type: [
+                            "line",
+                            "bar"
+                        ]
+                    },
+                    restore: {},
+                    saveAsImage: {}
+                }
+            },
+            xAxis: {
+                type: "value"
+            },
+            yAxis: {
+                gridIndex: 0,
+                min: 1.8,
+                max: 2.4,
+                type: "value"
+            },
+            series: [
+                {
+                    name: '',
+                    type: 'scatter',
+                    itemStyle: {
+                        color: 'red'
+                    },
+                    data: originalData
+                },
+                {
+                    type: "line",
+                    smooth: true,
+                    data: y_fix
+                }
+            ]
+        };
+
+        option.title.text = "y=" + a + "x²" + (b < 0 ? (b + "x") : ("+" + b + "x")) + (c < 0 ? (c + "") : ("+" + c));
+        console.log(option.title.text);
+        // 使用刚指定的配置项和数据显示图表。
+        myChart.setOption(option);
+    }
+
+    <!--  求解一元三次方程的根  -->
+    function solveCubic(a, b, c, d) {
+        if (a === 0) {
+            throw new Error("Coefficient 'a' must not be zero.");
+        }
+
+        // Normalize coefficients
+        b /= a;
+        c /= a;
+        d /= a;
+        debugger
+        const p = (3 * c - b * b) / 3;
+        const q = (2 * b * b * b - 9 * b * c + 27 * d) / 27;
+        const discriminant = (q * q) / 4 + (p * p * p) / 27;
+
+        const roots = [];
+
+        if (discriminant > 0) {
+            const u = Math.cbrt(-q / 2 + Math.sqrt(discriminant));
+            const v = Math.cbrt(-q / 2 - Math.sqrt(discriminant));
+            roots.push(u + v - b / 3);
+        } else if (discriminant === 0) {
+            const u = Math.cbrt(-q / 2);
+            roots.push(2 * u - b / 3);
+            roots.push(-u - b / 3);
+        } else {
+            const r = Math.sqrt((q * q) / 4 + Math.abs(discriminant));
+            const phi = Math.acos(-q / (2 * r));
+            const root1 = 2 * Math.cbrt(r) * Math.cos(phi / 3) - b / 3;
+            const root2 = 2 * Math.cbrt(r) * Math.cos((phi + 2 * Math.PI) / 3) - b / 3;
+            const root3 = 2 * Math.cbrt(r) * Math.cos((phi + 4 * Math.PI) / 3) - b / 3;
+            roots.push(root1, root2, root3);
+        }
+
+        return roots;
+    }
+
+
+    // 四次方拟合
+    function FourthDegreePolynomialFit() {
+        let x = [4, 4.5, 4.95, 5.45, 6];
+        let y = [2.27862973039822, 2.29937603435657, 2.30571112127021, 2.29826325612415, 2.28460491762075];
+
+        // 进行二次拟合
+        let X = x.map(xi => [xi * xi * xi * xi, xi * xi * xi, xi * xi, xi, 1]);
+        let yMatrix = jStat.transpose([y]);
+        let XMatrix = jStat.transpose(X);
+        let B = jStat.multiply(jStat.multiply(jStat.inv(jStat.multiply(XMatrix, X)), XMatrix), yMatrix);
+        let a = B[0][0];
+        let b = B[1][0];
+        let c = B[2][0];
+        let d = B[3][0];
+        let e = B[4][0];
+        let R2 = "0.9754";
+
+        // 求取最大值和最小值
+        let old_max = Math.max(...x);
+        let old_min = Math.min(...x);
+        let max = old_max;
+        let min = old_min;
+
+        // 生成从最小值到最大值之间的100个连续数值
+        let step = (max - min) / 999;
+        let continuousValues = Array.from({length: 1000}, (_, i) => min + i * step);
+        let y_fix = continuousValues.map(xi => [xi, a * xi * xi * xi * xi + b * xi * xi * xi + c * xi * xi + d * xi + e])
+        // 准备原始数据
+        let originalData = x.map((xi, i) => [xi, y[i]]);
+        // 基于准备好的dom，初始化echarts实例
+        var myChart = echarts.init(document.getElementById('main'));
+
+        // 找出峰值点
+        let roots = solveCubic(4 * a, 3 * b, 2 * c, d);
+        let peak_x;
+        let peak_y;
+        debugger
+        roots.forEach(root => {
+            if (root <= old_max && root >= old_min) {
+                peak_x = root;
+                peak_y = a * root * root * root * root + b * root * root * root + c * root * root + d * root + e;
+            }
+        });
+
+        let option = {
+            animation: false,
+            title: {
+                text: "y=" + a + "x²" + (b < 0 ? (b + "x") : ("+" + b + "x")) + (c < 0 ? (c + "") : ("+" + c)),
+                subtext: "R²=" + R2,
+                left: "center",
+                subtextStyle: {
+                    color: "red",
+                    fontSize: 20
+                }
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            legend: {},
+            toolbox: {
+                show: true,
+                feature: {
+                    saveAsImage: {}
+                }
+            },
+            xAxis: {
+                type: "value",
+                min: 3.8,
+                max: 6.2
+            },
+            yAxis: {
+                gridIndex: 0,
+                min: 2.2,
+                max: 2.4,
+                type: "value"
+            },
+            series: [
+                {
+                    name: '',
+                    type: 'scatter',
+                    itemStyle: {
+                        color: 'red'
+                    },
+                    data: originalData
+                },
+                {
+                    type: "line",
+                    smooth: true,
+                    data: y_fix,
+                    markLine: {
+                        label: {
+                            formatter: "(" + peak_x + "," + peak_y + ")",
+                            align: 'center',
+                        },
+                        lineStyle: {
+                            type: 'dashed'
+                        },
+                        data: [
+                            {
+                                yAxis: peak_y
+                            }
+                        ]
+                    }
+                }
+            ]
+        };
+
+        option.title.text = "y=" + a.toFixed(4) + "x^4" + (b < 0 ? (b.toFixed(4) + "x^3") : ("+" + b.toFixed(4) + "x"))
+            + (c < 0 ? (c.toFixed(4) + "x²") : ("+" + c.toFixed(4) + "x²"))
+            + (d < 0 ? (d.toFixed(4) + "x") : ("+" + d.toFixed(4) + "x"))
+            + (e < 0 ? (e.toFixed(4) + "") : ("+" + e.toFixed(4) + ""));
+        // 使用刚指定的配置项和数据显示图表。
+        myChart.setOption(option);
+    }
+
+    FourthDegreePolynomialFit()
+</script>
+</body>
+</html>

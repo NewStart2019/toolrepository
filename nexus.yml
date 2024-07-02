@@ -6,6 +6,7 @@ services:
     ports:
       - 5001:8081
       - 5000:5000
+    network_mode: bridge
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - $PWD/nexus-data:/nexus-data

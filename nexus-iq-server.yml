@@ -1,0 +1,11 @@
+name: nexus-iq-server
+services:
+  nexus-iq-server:
+    container_name: nexus-iq-server
+    image: 172.16.0.197:8083/tool/nexus-iq-server:1.0
+    network_mode: bridge
+    ports:
+      - 8070:8070
+    volumes:
+      - /app/nexus/sonatype-work:/sonatype-work
+      - /app/nexus/logs:/var/log/nexus-iq-server
