@@ -253,6 +253,7 @@
     <button class="form-row" onclick="copData()">复制并增加字段值</button>
     <button class="form-row" onclick="caseData()">指定字段转大小写</button>
     <button class="form-row" onclick="addFix()">指定字段加前后缀</button>
+    <button class="form-row" onclick="convert()">转换公式</button>
 </div>
 
 <!-- 对话框容器 -->
@@ -648,6 +649,47 @@
         }
         shower.setValue(JSON.stringify(parsedData, null, 2));
     }
+
+    function convert() {
+        var data = getData().jsonData?.trim();
+        if (data) {
+            data = data.split("\n");
+        }
+        debugger
+        const formulaPattern = /^(\w+)\s*=\s*(.+)$/;
+        let finalResult = "";
+        for (let i = 0; i < data.length; i++) {
+            let formula = data[i];
+            let match = formula.match(formulaPattern);
+            if (match) {
+                const resultVar = match[1];
+                const expression = match[2];
+
+                // Find all variables in the expression (excluding numbers)
+                const variablePattern = /\b(?!\d+\b)\w+\b/g;
+                const variables = [...new Set(expression.match(variablePattern))];
+
+                // Generate the conditions to check if all variables are defined
+                const conditions = variables.map(variable => `formData.${variable}`).join(' && ');
+
+                // Replace variables in the expression with formData equivalents
+                const modifiedExpression = expression.replace(/\b(?!\d+\b)(\w+)\b/g, 'formData.$1');
+
+                // Generate the final JavaScript code
+                const jsCode = `
+if (${conditions}) {
+    fapi.setValue('${resultVar}', ${modifiedExpression});
+}
+                `;
+                result = jsCode?.trim();
+            } else {
+                result = "Invalid formula " + formula + ". Please use the format: resultVar=var1-operator-var2 (e.g., m14=m13-m12)";
+            }
+            finalResult += result + "\n";
+        }
+        shower.setValue(finalResult);
+    }
+
 
     function copyOutputData() {
         if (window.isSecureContext) {
