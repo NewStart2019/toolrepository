@@ -650,43 +650,87 @@
         shower.setValue(JSON.stringify(parsedData, null, 2));
     }
 
-    function convert() {
-        var data = getData().jsonData?.trim();
-        if (data) {
-            data = data.split("\n");
-        }
-        debugger
-        const formulaPattern = /^(\w+)\s*=\s*(.+)$/;
-        let finalResult = "";
-        for (let i = 0; i < data.length; i++) {
-            let formula = data[i];
-            let match = formula.match(formulaPattern);
-            if (match) {
-                const resultVar = match[1];
-                const expression = match[2];
+    /**
+     * 四则运算公式处理
+     * @param formula
+     * @return {string | undefined}
+     */
+    function dealCalculate(formula) {
+        const resultVar = formula.field;
+        const expression = formula.formula;
 
-                // Find all variables in the expression (excluding numbers)
-                const variablePattern = /\b(?!\d+\b)\w+\b/g;
-                const variables = [...new Set(expression.match(variablePattern))];
+        // Find all variables in the expression (excluding numbers)
+        const variablePattern = /\b(?!\d+\b)\w+\b/g;
+        const variables = [...new Set(expression.match(variablePattern))];
 
-                // Generate the conditions to check if all variables are defined
-                const conditions = variables.map(variable => `formData.${variable}`).join(' && ');
+        // Generate the conditions to check if all variables are defined
+        const conditions = variables.map(variable => `(formData.${variable} || formData.${variable} == 0)`).join(' && ');
 
-                // Replace variables in the expression with formData equivalents
-                const modifiedExpression = expression.replace(/\b(?!\d+\b)(\w+)\b/g, 'formData.$1');
+        // Replace variables in the expression with formData equivalents
+        var modifiedExpression = expression.replace(/\b(?!\d+\b)(\w+)\b/g, 'formData.$1');
+        // 添加修约函数
+        modifiedExpression = "tool.cpEvenRound(" + modifiedExpression + ", " + formula.scale + ")";
 
-                // Generate the final JavaScript code
-                const jsCode = `
+        // Generate the final JavaScript code
+        const jsCode = `
 if (${conditions}) {
     fapi.setValue('${resultVar}', ${modifiedExpression});
 }
                 `;
-                result = jsCode?.trim();
-            } else {
-                result = "Invalid formula " + formula + ". Please use the format: resultVar=var1-operator-var2 (e.g., m14=m13-m12)";
-            }
-            finalResult += result + "\n";
+        return jsCode?.trim();
+    }
+
+    function convert() {
+        var data = getData().jsonData?.trim();
+        let flag = false;
+        let finalResult = "";
+        var parsedData = {};
+        try {
+            parsedData = JSON.parse(data);
+            flag = true;
+        } catch (e) {
         }
+        debugger
+        if (flag) {
+            let formula = parsedData.paramsFormula;
+            formula.map(f => {
+                // 合格性验证不转换
+                if (!f.field?.includes("validate")) {
+                    finalResult += dealCalculate(f) + "\n";
+                }
+            });
+        } else {
+            if (data) {
+                data = data.split("\n");
+            }
+            // \w 相当于字符类 [a-zA-Z0-9_]
+            // \s 匹配任何空白字符，相当于字符类 [ \t\r\n\f\v]。
+            // \b 匹配一个单词边界。单词边界是指一个单词的开头或结尾，
+            // \d 匹配任何数字字符。
+            // g 查找所有匹配项
+            const formulaPattern = /^(\w+)\s*=\s*(.+)$/;
+
+            for (let i = 0; i < data.length; i++) {
+                let formula = data[i];
+                let match = formula.match(formulaPattern);
+                let result = "";
+                if (match) {
+                    const resultVar = match[1];
+                    const expression = match[2];
+
+                    result = dealCalculate({
+                        "field": resultVar,
+                        "formula": expression,
+                        "scale": 0.0001
+                    });
+
+                } else {
+                    result = "Invalid formula " + formula + ". Please use the format: resultVar=var1-operator-var2 (e.g., m14=m13-m12)";
+                }
+                finalResult += result + "\n";
+            }
+        }
+
         shower.setValue(finalResult);
     }
 
