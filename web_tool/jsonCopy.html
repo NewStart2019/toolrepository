@@ -225,10 +225,10 @@
 </div>
 <div class="flex-container" id="container1">
     <div class="form-row">
-        <input type="text" class="fieldName" id="fieldName" placeholder="指定字段名">
+        <input type="text" class="fieldName" id="fieldName" placeholder="指定字段名"/>
     </div>
     <div class="form-row">
-        <input type="number" class="startIndex" id="startIndex" placeholder="起始数字">
+        <input type="number" class="startIndex" id="startIndex" placeholder="起始数字"/>
     </div>
     <div class="form-row">
         <select id="transfer" class="transfer">
@@ -237,7 +237,7 @@
         </select>
     </div>
     <div class="form-row">
-        <input type="text" class="fix" id="fix" placeholder="前|后缀值">
+        <input type="text" class="fix" id="fix" placeholder="前|后缀值"/>
     </div>
     <div class="form-row">
         <button onclick="addField('')">+</button>
@@ -651,7 +651,211 @@
     }
 
     /**
+     * 公式转换分析
+     * @param resultVar 结果id
+     * @param formula 公式 数组
+     * @param scale 精度
+     * @param isCheck 是否检查id
+     * @param isEvenRound 是否修约
+     */
+    function formulaAnalyze(resultVar, formula, scale, isCheck, isEvenRound) {
+        const expression = formula.join(" ");
+
+        // Find all variables in the expression (excluding numbers)
+        const variablePattern = /\b(?!\d+\b)\w+\b/g;
+        const variables = [...new Set(expression.match(variablePattern))];
+
+        // Generate the conditions to check if all variables are defined
+        const conditions = variables.map(variable => `(formData.${variable}  != null)`).join(' && ');
+
+        // Replace variables in the expression with formData equivalents
+        var modifiedExpression = expression.replace(/\b(?!\d+\b)(\w+)\b/g, 'formData.$1');
+        modifiedExpression = modifiedExpression.replace(";", "");
+        let jsCode;
+        if (resultVar == null && isEvenRound) {
+            jsCode = isEvenRound ? `tool.cpEvenRound(${modifiedExpression}}, ${scale})` : modifiedExpression;
+        } else {
+            jsCode = isEvenRound ? `fapi.setValue('${resultVar}', tool.cpEvenRound(${modifiedExpression},${scale}))` :
+                `fapi.setValue('${resultVar}', ${modifiedExpression})`;
+        }
+        if (isCheck) {
+            jsCode = `if (${conditions}) {
+    ${jsCode};
+} `;
+        }
+        return jsCode?.trim();
+    }
+
+    /**
+     * 语法解析
+     * @param formula
+     * @returns []
+     */
+    function programAnalyze(f) {
+        resultVar = f.field;
+        formula = f.formula;
+        // 单词划分
+        formula = formula.replace(/([\+\-\*\/(){};])/g, ' $1 ');
+        const regex = /(?:\".*?\"|\'.*?\')|[^ \s]+/g;
+        const calculateChar = ["+", "-", "*", "/", "(", ")", ";", "?", ">", ">=", "<", "<=", "==", "!=", "=", ":"];
+        const keywords = ["null"];
+        const words = formula.match(regex);
+        var types = ["if", "for", "while", "return"]
+        const variablePattern = /\b(?!\d+\b)\w+\b/g;
+        const stringOrNumberPattern = /(^\".*?\"|^\'.*?\')|(^[\d]+)/g;
+        let type;
+        let resultProgram = [];
+        // 临时变量名称不做特殊处理，但是要转换成js变量
+        while (words.length > 0) {
+            if (types.includes(words[0])) {
+                type = words[0];
+            } else if (words[1] == "=") {
+                type = "assign";
+            } else {
+                type = "other-operate"
+            }
+            // "if uni4 == null || uni4 == ''  then return  uni5;\nreturn uni4;",
+            if (words[0] == "{" || words[0] == "}") {
+                resultProgram.push(words.shift());
+            } else if (type == "if") {
+                let finishChar = words.indexOf("then");
+                if (words[finishChar + 1] == "{") {
+                    finishChar += 1;
+                }
+                // 注意修改原数组(获取一条语句数组) 包含结束字符本身
+                let fArray = words.splice(0, finishChar + 1);
+                let newFArray = [];
+                // if  Hs < 5.0 then {
+                // 转换语句
+                for (let i = 0; i < fArray.length; i++) {
+                    //匹配变量名称
+                    if (fArray[i] == "if") {
+                        newFArray.push(fArray[i]);
+                        if (fArray[i + 1] != "(") {
+                            newFArray.push("(");
+                        } else {
+                            i++;
+                        }
+                    } else if (keywords.includes(fArray[i])) {
+                        newFArray.push(fArray[i]);
+                    } else if (fArray[i].match((stringOrNumberPattern))) {
+                        newFArray.push(fArray[i]);
+                    } else if (fArray[i].match((/^\w+/))) {
+                        newFArray.push("formData." + fArray[i]);
+                    } else {
+                        newFArray.push(fArray[i]);
+                    }
+
+                    if (fArray[i + 1] == "then") {
+                        if (fArray[i] != ")") {
+                            newFArray.push(")");
+                        }
+                        i++;
+                    }
+                }
+                resultProgram.push(newFArray.join(" "));
+            } else if (type == "for") {
+                let finishChar = words.indexOf("{");
+                let fArray = words.splice(0, finishChar + 1);
+                // for(j=4;j>0;j--){
+                // 转换语句
+                for (let i = 0; i < fArray.length; i++) {
+                    //匹配变量名称
+                    if (fArray[i].match((/\w+/))) {
+                        fArray[i] = "formData." + fArray[i];
+                    }
+                }
+                resultProgram.push(fArray.join(" "));
+            } else if (type == "while") {
+                let finishChar = words.indexOf("{");
+                let fArray = words.splice(0, finishChar + 1);
+                // for(j=4;j>0;j--){
+                // 转换语句
+                for (let i = 0; i < fArray.length; i++) {
+                    //匹配变量名称
+                    if (fArray[i].match((/\w+/))) {
+                        fArray[i] = "formData." + fArray[i];
+                    }
+                }
+                resultProgram.push(fArray.join(" "));
+            } else if (type == "return") {
+                let finishChar = words.indexOf(";");
+                let fArray = finishChar == -1 ? words.splice(0, words.length) : words.splice(0, finishChar + 1);
+                // 如果返回字符串
+                // return ;
+                if (fArray.length <= 2) {
+                    assign = fArray.join(" ");
+                } else if (fArray.length == 3) {
+                    // 匹配数字或字符
+                    if (fArray[1].match(stringOrNumberPattern)) {
+                        assign = `fapi.setValue('${resultVar}', '${fArray[1]}')`;
+                    } else {
+                        assign = "formData." + fArray[1];
+                    }
+                } else {
+                    assign = formulaAnalyze(resultVar, fArray.slice(1, fArray.length), f.scale, false, false);
+                }
+                resultProgram.push("return " + assign + ";");
+            } else if (type == "assign") {
+                let finishChar = words.indexOf(";");
+                let fArray = words.splice(0, finishChar + 1);
+                // TODO 参数存在与否检测，如果原来的语法已经检测那么就不用添加if判断
+                for (let i = 2; i < fArray.length; i++) {
+                    if (!calculateChar.includes(fArray[i])) {
+                        fArray[i] = "formData." + fArray[i];
+                    }
+                }
+                if (fArray[fArray.length - 1] == ";") {
+                    fArray.pop();
+                }
+                let assign = `fapi.setValue('${fArray[0]}', ${fArray.slice(2).join(" ")})`;
+                resultProgram.push(assign + ";");
+            } else {
+                let finishChar = words.indexOf(";");
+                let fArray = finishChar == -1 ? words.slice(0, words.length) : words.splice(0, finishChar + 1);
+                const charSmall = ["+", "-", "*", "/"];
+                let isHaveCalculate = false;
+                fArray.forEach((f, index) => {
+                    if (charSmall.includes(f)) {
+                        isHaveCalculate = true;
+                        return;
+                    }
+                })
+
+                // 空语句，直接跳过
+                if (fArray.length == 1) {
+                    continue;
+                } else if (fArray.length == 2) {
+                    // ”字符串“; 或者 123838;
+                    if (fArray[1].match(stringOrNumberPattern)) {
+                        resultProgram.push(`fapi.setValue('${resultVar}', '${fArray[1]}')`);
+                    } else {
+                        resultProgram.push("formData." + fArray[1]);
+                    }
+                } else if (fArray[0] == "exception") {
+                    resultProgram.push(`message.error(${fArray[2]});`);
+                } else if (fArray[0] == "record.put(" || fArray[0] == "context.put(") {
+                    resultProgram.push(`fapi.setValue('${fArray[1]}', '${fArray[fArray.length - 3].match(stringOrNumberPattern)
+                        ? fArray[fArray.length - 3] : "formData." + fArray[fArray.length - 3]}'})`);
+                } else if (isHaveCalculate) {
+                    // 如果含有加减乘除（特殊处理）
+                    resultProgram.push(formulaAnalyze(resultVar, fArray, f.scale, true, true));
+                } else {
+                    resultProgram.push("Not support language: " + fArray.join(" "));
+                    // resultProgram.push(`fapi.setValue('${fArray[1]}', formData.'${fArray[fArray.length - 3]}'})`);
+                }
+            }
+        }
+        return resultProgram;
+    }
+
+    /**
      * 四则运算公式处理
+     *             // \w 相当于字符类 [a-zA-Z0-9_]
+     *             // \s 匹配任何空白字符，相当于字符类 [ \t\r\n\f\v]。
+     *             // \b 匹配一个单词边界。单词边界是指一个单词的开头或结尾，
+     *             // \d 匹配任何数字字符。
+     *             // g 查找所有匹配项
      * @param formula
      * @return {string | undefined}
      */
@@ -683,21 +887,23 @@ if (${conditions}) {
     function convert() {
         var data = getData().jsonData?.trim();
         let flag = false;
-        let finalResult = "";
+        let finalResult = [];
         var parsedData = {};
         try {
             parsedData = JSON.parse(data);
             flag = true;
         } catch (e) {
         }
-        debugger
         if (flag) {
             let formula = parsedData.paramsFormula;
             formula.map(f => {
                 // 合格性验证不转换
-                if (!f.field?.includes("validate")) {
-                    finalResult += dealCalculate(f) + "\n";
-                }
+                debugger
+                f.formula = f.formula + ";";
+                let result = programAnalyze(f);
+                result.forEach(r => {
+                    finalResult.push(r);
+                });
             });
         } else {
             if (data) {
@@ -727,13 +933,12 @@ if (${conditions}) {
                 } else {
                     result = "Invalid formula " + formula + ". Please use the format: resultVar=var1-operator-var2 (e.g., m14=m13-m12)";
                 }
-                finalResult += result + "\n";
+                finalResult.push(result);
             }
         }
 
-        shower.setValue(finalResult);
+        shower.setValue(finalResult.join("\n"));
     }
-
 
     function copyOutputData() {
         if (window.isSecureContext) {
