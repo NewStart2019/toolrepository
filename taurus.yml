@@ -4,6 +4,7 @@ services:
   taurus:
     image: blazemeter/taurus
     container_name: taurus
+    network_mode: bridge
     volumes:
       - ./config:/bzt-configs
     ports:
