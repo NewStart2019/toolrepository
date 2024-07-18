@@ -868,7 +868,7 @@
         const variables = [...new Set(expression.match(variablePattern))];
 
         // Generate the conditions to check if all variables are defined
-        const conditions = variables.map(variable => `(formData.${variable} || formData.${variable} == 0)`).join(' && ');
+        const conditions = variables.map(variable => `(formData.${variable} != null)`).join(' && ');
 
         // Replace variables in the expression with formData equivalents
         var modifiedExpression = expression.replace(/\b(?!\d+\b)(\w+)\b/g, 'formData.$1');
