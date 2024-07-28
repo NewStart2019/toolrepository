@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人网页</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            background-color: #6a0dad;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            padding: 20px;
+            max-width: 800px;
+            margin: auto;
+            background: white;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section h2 {
+            border-bottom: 2px solid #6a0dad;
+            padding-bottom: 10px;
+        }
+        .list-item {
+            margin-bottom: 10px;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            background-color: #6a0dad;
+            color: white;
+        }
+        .export-btn {
+            background-color: #6a0dad;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 20px;
+            display: block;
+            width: 200px;
+            text-align: center;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.0/jspdf.umd.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+</head>
+<body>
+    <div class="header">
+        <h1>个人简历</h1>
+    </div>
+    <div class="container" id="content">
+        <div class="section">
+            <h2>个人简介</h2>
+            <p>你好，我叫张三，是一名软件开发工程师，专注于前端开发和用户体验设计。我热衷于学习新技术，并喜欢将创新的想法应用到我的项目中。</p>
+        </div>
+        <div class="section">
+            <h2>工作经历</h2>
+            <div class="list-item">
+                <h3>软件开发工程师 - ABC公司</h3>
+                <p>2020年至今</p>
+                <p>负责公司主要产品的前端开发和维护，参与用户体验设计和功能优化。</p>
+            </div>
+            <div class="list-item">
+                <h3>前端开发实习生 - XYZ公司</h3>
+                <p>2018年 - 2020年</p>
+                <p>参与多个前端项目的开发，协助团队完成项目任务。</p>
+            </div>
+        </div>
+        <div class="section">
+            <h2>教育背景</h2>
+            <div class="list-item">
+                <h3>计算机科学学士 - 某某大学</h3>
+                <p>2014年 - 2018年</p>
+                <p>主要学习计算机科学与技术，参与多个编程比赛并获得奖项。</p>
+            </div>
+        </div>
+        <div class="section">
+            <h2>项目作品集</h2>
+            <div class="list-item">
+                <h3>项目A</h3>
+                <p>一个基于React的单页应用，用于管理个人任务和日程。</p>
+            </div>
+            <div class="list-item">
+                <h3>项目B</h3>
+                <p>一个使用Node.js和MongoDB开发的全栈项目，实现了用户认证和数据管理功能。</p>
+            </div>
+        </div>
+        <div class="section">
+            <h2>技能列表</h2>
+            <ul>
+                <li>HTML/CSS/JavaScript</li>
+                <li>React.js</li>
+                <li>Node.js</li>
+                <li>Git</li>
+                <li>用户体验设计</li>
+            </ul>
+        </div>
+        <div class="section">
+            <h2>博客文章</h2>
+            <div class="list-item">
+                <h3>如何在React中管理状态</h3>
+                <p>介绍了在React中使用不同状态管理工具的方法和最佳实践。</p>
+            </div>
+            <div class="list-item">
+                <h3>前端开发的未来趋势</h3>
+                <p>探讨了前端开发领域的最新趋势和技术演进。</p>
+            </div>
+        </div>
+    </div>
+    <button class="export-btn" onclick="exportPDF()">导出为PDF</button>
+    <div class="footer">
+        <p>&copy; 2024 张三. 保留所有权利。</p>
+    </div>
+
+    <script>
+        async function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'pt', 'a4');
+            const content = document.getElementById('content');
+            const margin = 20;
+            const pdfWidth = doc.internal.pageSize.getWidth() - margin * 2;
+            const pdfHeight = doc.internal.pageSize.getHeight() - margin * 2;
+            let yOffset = margin;
+
+            const sections = Array.from(content.children);
+            
+            for (const section of sections) {
+                await html2canvas(section, { scale: 2 }).then((canvas) => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const imgProps = doc.getImageProperties(imgData);
+                    const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+                    if (yOffset + imgHeight > pdfHeight + margin) {
+                        doc.addPage();
+                        yOffset = margin;
+                    }
+
+                    doc.addImage(imgData, 'PNG', margin, yOffset, pdfWidth, imgHeight);
+                    yOffset += imgHeight + 10; // Add some space between sections
+                });
+            }
+
+            doc.save('个人网页.pdf');
+        }
+    </script>
+</body>
+</html>
