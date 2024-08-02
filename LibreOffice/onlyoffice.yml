@@ -5,6 +5,7 @@ services:
     image: onlyoffice/documentserver-de
     container_name: onlyoffice
     restart: always
+    network_mode: bridge
     environment:
       - JWT_SECRET=my_jwt_secret
     ports:
@@ -12,6 +13,6 @@ services:
       - "5432:5432"
     volumes:
       - /app/onlyoffice/DocumentServer/logs:/var/log/onlyoffice
-      - /app/onlyoffice/DocumentServer/data:/var/www/onlyoffice/Data   
-      - /app/onlyoffice/DocumentServer/lib:/var/lib/onlyoffice     
+      - /app/onlyoffice/DocumentServer/data:/var/www/onlyoffice/Data
+      - /app/onlyoffice/DocumentServer/lib:/var/lib/onlyoffice
       - /app/onlyoffice/DocumentServer/db:/var/lib/postgresql

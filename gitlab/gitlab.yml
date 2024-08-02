@@ -1,10 +1,11 @@
-version: '3.6'
+name: gitlab
 services:
   gitlab:
     image: 'gitlab/gitlab-ce:latest'
     container_name: 'gitlab'
     restart: always
     hostname: '172.16.0.145'
+    network_mode: bridge
     environment:
       GITLAB_OMNIBUS_CONFIG: |
         external_url 'http://172.16.0.145:8929'

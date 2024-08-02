@@ -1,8 +1,9 @@
-version: '3.6'
+name: sonarqube
 services:
   sonarqube:
     image: sonarqube:9.9.0-community
     container_name: sonarqube
+    network_mode: bridge
     ports:
       - "9002:9000"
       - "9003:9092"
@@ -12,7 +13,7 @@ services:
       - SONARQUBE_JDBC_URL=jdbc:mysql://172.16.0.145:3306/sonarquebe?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
     volumes:
       # 设置与宿主机时间同步
-      - /etc/localtime:/etc/localtime:ro 
+      - /etc/localtime:/etc/localtime:ro
       - /app/sonarqube/data:/opt/sonarqube/data
       - /app/sonarqube/extensions:/opt/sonarqube/extensions
       - /app/sonarqube/logs:/opt/sonarqube/logs

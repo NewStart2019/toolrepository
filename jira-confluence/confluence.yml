@@ -1,8 +1,9 @@
-version: '3.8'
+name: confluence
 services:
   confluence:
     image: 172.16.0.145:8083/tool/confluence:1.0
     container_name: confluence
+    network_mode: bridge
     ports:
       - "8090:8090"
     environment:
@@ -26,7 +27,7 @@ services:
     volumes:
       - confluence_data:/var/atlassian/application-data/confluence
 volumes:
-  confluence_data: 
+  confluence_data:
     driver: local
     driver_opts:
       type: none

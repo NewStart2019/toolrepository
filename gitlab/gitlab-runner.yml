@@ -1,8 +1,9 @@
-version: '3.6'
+name: gitlab-runner
 services:
   gitlab-runner:
     image: 'gitlab/gitlab-runner:latest'
     container_name: gitlab-runner
+    network_mode: bridge
     volumes:
       - '/app/gitlab/gitlab-runner/config:/etc/gitlab-runner'
       - '/var/run/docker.sock:/var/run/docker.sock'

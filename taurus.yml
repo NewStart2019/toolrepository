@@ -1,5 +1,4 @@
-version: '3'
-
+name: taurus
 services:
   taurus:
     image: blazemeter/taurus
