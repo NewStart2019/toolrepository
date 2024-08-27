@@ -1,7 +1,7 @@
 name: "bind"
 services:
   bind:
-    image: 172.16.0.197:8083/tool/bind:latest
+    image: 172.16.0.197:8083/tool/bind:latest # docker pull sameersbn/bind:latest
     container_name: bind
     network_mode: bridge
     restart: always
