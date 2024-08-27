@@ -1,16 +1,16 @@
 name: gitlab
 services:
   gitlab:
-    image: 'gitlab/gitlab-ce:latest'
+    image: '172.16.0.197:8083/gitlab/gitlab-ce:16.11.8'
     container_name: 'gitlab'
     restart: always
-    hostname: '172.16.0.145'
+    hostname: '172.16.0.197'
     network_mode: bridge
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        external_url 'http://172.16.0.145:8929'
+        external_url 'http://172.16.0.197:8929'
         nginx['listen_port'] = 8929
-        gitlab_rails['gitlab_ssh_host'] = '172.16.0.145'
+        gitlab_rails['gitlab_ssh_host'] = '172.16.0.197'
         gitlab_rails['gitlab_shell_ssh_port'] = 2224
         postgresql['enable'] = false
         gitlab_rails['db_adapter'] = 'postgresql'
