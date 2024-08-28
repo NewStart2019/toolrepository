@@ -5,4 +5,4 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: 172.16.0.145:8083/tool/jdk21:1.2
+    image: 172.16.0.145:8083/tool/jdk21:1.3

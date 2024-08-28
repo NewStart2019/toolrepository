@@ -4,6 +4,7 @@ curl -o /usr/share/fonts/msyhl.ttc http://172.16.0.227:84/fonts/msyhl.ttc
 curl -o /usr/share/fonts/simhei.ttf http://172.16.0.227:84/fonts/simhei.ttf
 curl -o /usr/share/fonts/simsun.ttc http://172.16.0.227:84/fonts/simsun.ttc
 curl -o /usr/share/fonts/simsun.ttf http://172.16.0.227:84/fonts/simsun.ttf
+curl -o /usr/share/fonts/simsun.ttf http://172.16.0.227:84/fonts/simsun.ttf
 curl -o /usr/share/fonts/times.ttf http://172.16.0.227:84/fonts/times.ttf
 curl -o /usr/share/fonts/Times_New_Roman.ttf http://172.16.0.227:84/fonts/Times_New_Roman.ttf
 curl -o /usr/share/fonts/timesbd.ttf http://172.16.0.227:84/fonts/timesbd.ttf

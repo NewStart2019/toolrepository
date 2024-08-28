@@ -11,6 +11,7 @@ RUN curl -o /usr/share/fonts/msyhbd.ttc http://172.16.0.227:84/fonts/msyhbd.ttc
 RUN curl -o /usr/share/fonts/msyhl.ttc http://172.16.0.227:84/fonts/msyhl.ttc
 RUN curl -o /usr/share/fonts/simhei.ttf http://172.16.0.227:84/fonts/simhei.ttf
 RUN curl -o /usr/share/fonts/simsun.ttc http://172.16.0.227:84/fonts/simsun.ttc
+RUN curl -o /usr/share/fonts/stsong.ttf http://172.16.0.227:84/fonts/stsong.ttf
 RUN curl -o /usr/share/fonts/simsun.ttf http://172.16.0.227:84/fonts/simsun.ttf
 RUN curl -o /usr/share/fonts/times.ttf http://172.16.0.227:84/fonts/times.ttf
 RUN curl -o /usr/share/fonts/Times_New_Roman.ttf http://172.16.0.227:84/fonts/Times_New_Roman.ttf
