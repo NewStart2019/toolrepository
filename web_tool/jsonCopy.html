@@ -686,6 +686,11 @@
         return jsCode?.trim();
     }
 
+    function isNumeric(value) {
+        const num = Number(value);
+        return !isNaN(num) && value === num.toString();
+    }
+
     /**
      * 语法解析
      * @param formula
@@ -793,15 +798,16 @@
                         assign = "formData." + fArray[1];
                     }
                 } else {
-                    assign = formulaAnalyze(resultVar, fArray.slice(1, fArray.length), f.scale, false, false);
+                    assign = formulaAnalyze(resultVar, fArray.slice(1, fArray.length), f.scale, false, f.scale != null);
                 }
                 resultProgram.push("return " + assign + ";");
             } else if (type == "assign") {
+                debugger
                 let finishChar = words.indexOf(";");
                 let fArray = words.splice(0, finishChar + 1);
                 // TODO 参数存在与否检测，如果原来的语法已经检测那么就不用添加if判断
                 for (let i = 2; i < fArray.length; i++) {
-                    if (!calculateChar.includes(fArray[i])) {
+                    if (!calculateChar.includes(fArray[i]) && !isNumeric(fArray[i])) {
                         fArray[i] = "formData." + fArray[i];
                     }
                 }
@@ -839,7 +845,7 @@
                         ? fArray[fArray.length - 3] : "formData." + fArray[fArray.length - 3]}'})`);
                 } else if (isHaveCalculate) {
                     // 如果含有加减乘除（特殊处理）
-                    resultProgram.push(formulaAnalyze(resultVar, fArray, f.scale, true, true));
+                    resultProgram.push(formulaAnalyze(resultVar, fArray, f.scale, true, f.scale != null));
                 } else {
                     resultProgram.push("Not support language: " + fArray.join(" "));
                     // resultProgram.push(`fapi.setValue('${fArray[1]}', formData.'${fArray[fArray.length - 3]}'})`);
