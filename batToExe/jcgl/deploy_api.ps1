@@ -155,12 +155,12 @@ function Get_InitVariable
 {
     $Global:target_server = Get-Input -Info "Please input the target server 'dev' or 'pro' for deployment (default is dev)" -Value "$target"
     $Global:operate = Get-Input -Info "Please input operate(jar, image, deploy) (default is deploy)" -Value "$operate"
-    [string]$Global:PROJECT_NAME = "stcjc"
+    [string]$Global:PROJECT_NAME = "stc-jcgl"
     [string]$Global:currentIP = Get-IPAddress "172.16.0"
     [string]$Global:current_path = Get-Location
     [string]$Global:PROJECT_VERSION = Get-CurrentVersion -file "..\VERSION"
     [string]$Global:target_file = "build\libs\$PROJECT_NAME-$PROJECT_VERSION.jar"
-    [string]$Global:PORT = Get-Input -Info "Please input port(default is 8605)" -Value "8605"
+    [string]$Global:PORT = Get-Input -Info "Please input port(default is 8603)" -Value "8603"
     [string]$Global:JAR_FILE = "$PROJECT_NAME-$PROJECT_VERSION.jar"
     [string]$Global:DOCKER_REPOSITORY = "172.16.0.197:8083"
     [string]$Global:IMAGE_NAME = "csatc/$PROJECT_NAME"
@@ -182,8 +182,8 @@ function Get_InitVariable
         }
         Write-ColoredText -Text ">>>>>>>>>Step: Initialization......"
         [string]$Global:username = "root"
-        [string]$Global:ip = "172.16.0.226"
-        [string]$Global:password = "JKgTh4bPyyput9j8"
+        [string]$Global:ip = "172.16.0.83"
+        [string]$Global:password = "94whI23VucJWqqBm"
         [string]$Global:PROFILES_ACTIVE = "prod"
     }
     else
@@ -257,7 +257,7 @@ function Get-Image
         sshpass -p $password scp -p "$JAR_FILE" "$username@$ip`:/app/$PROJECT_NAME"
 
         # 构建上传镜像
-        $cm_build = "cd /app/$PROJECT_NAME;export PROJECT_VERSION=`"$PROJECT_VERSION`"; export PORT=`"$PORT`"; export PROFILES_ACTIVE=`"$PROFILES_ACTIVE`"; export PROJECT_NAME=`"$PROJECT_NAME`"; export JAR_FILE=`"$JAR_FILE`"; export DOCKER_REPOSITORY=`"$DOCKER_REPOSITORY`"; export IMAGE_NAME=`"$IMAGE_NAME`"; export IMAGE_FULL_NAME=`"$IMAGE_FULL_NAME`"; export CONTAINER_NAME=`"$CONTAINER_NAME`"; export CONTAINER_NAME=`"$CONTAINER_NAME`"; docker-compose -f docker-compose.yml config > docker-compose-$PROJECT_NAME.yml; docker-compose -f docker-compose-$PROJECT_NAME.yml build; docker-compose -f docker-compose-$PROJECT_NAME.yml push -q;"
+        $cm_build = "cd /app/$PROJECT_NAME; export PORT=`"$PORT`"; export PROFILES_ACTIVE=`"$PROFILES_ACTIVE`"; export PROJECT_NAME=`"$PROJECT_NAME`"; export JAR_FILE=`"$JAR_FILE`"; export DOCKER_REPOSITORY=`"$DOCKER_REPOSITORY`"; export IMAGE_NAME=`"$IMAGE_NAME`"; export IMAGE_FULL_NAME=`"$IMAGE_FULL_NAME`"; export CONTAINER_NAME=`"$CONTAINER_NAME`"; export CONTAINER_NAME=`"$CONTAINER_NAME`"; docker-compose -f docker-compose.yml config > docker-compose-$PROJECT_NAME.yml; docker-compose -f docker-compose-$PROJECT_NAME.yml build; docker-compose -f docker-compose-$PROJECT_NAME.yml push -q;"
         sshpass -p $password ssh $username@$ip "$cm_build"
         if (!$?)
         {
