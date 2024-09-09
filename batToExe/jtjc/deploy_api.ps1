@@ -369,11 +369,10 @@ function Get-Deploy
         {
             Write-ColoredText -Text ">>>>>>>>>Step4: Start docker container success!"
         }
-
-        $git_log = git log --oneline -n 1 HEAD
-        $cm_log = 'echo "Deployment for user with ' + $currentIP + ' was successful, deployment time is: ' + $currentDatetime + '. The Git log for the deployment is: ' + $git_log + '" >> /app/' + $PROJECT_NAME + '/log/deploy.log'
-        sshpass -p $password ssh $username@$ip "$cm_log"
     }
+    $git_log = git log --oneline -n 1 HEAD
+    $cm_log = 'echo "Deployment for user with ' + $currentIP + ' was successful, deployment time is: ' + $currentDatetime + '. The Git log for the deployment is: ' + $git_log + '" >> /app/' + $PROJECT_NAME + '/log/deploy.log'
+    sshpass -p $password ssh $username@$ip "$cm_log"
 }
 
 Get_InitVariable
