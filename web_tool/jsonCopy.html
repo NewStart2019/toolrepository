@@ -644,7 +644,6 @@
             throw new Error('输入的JSON数据必须是一个对象');
         }
         for (var i = 0; i < data.fieldValues.length; i++) {
-            debugger
             addSuffixOrPrefix(parsedData, data.fieldValues[i], data.fixValues[i], data.transferValues[i] == 1);
         }
         shower.setValue(JSON.stringify(parsedData, null, 2));
@@ -675,8 +674,8 @@
         if (resultVar == null && isEvenRound) {
             jsCode = isEvenRound ? `tool.cpEvenRound(${modifiedExpression}}, ${scale})` : modifiedExpression;
         } else {
-            jsCode = isEvenRound ? `fapi.setValue('${resultVar}', tool.cpEvenRound(${modifiedExpression},${scale}))` :
-                `fapi.setValue('${resultVar}', ${modifiedExpression})`;
+            jsCode = isEvenRound ? `fapi.setValue('${resultVar}', tool.cpEvenRound(${modifiedExpression},${scale}) + "")` :
+                `fapi.setValue('${resultVar}', ${modifiedExpression} + "")`;
         }
         if (isCheck) {
             jsCode = `if (${conditions}) {
@@ -802,7 +801,6 @@
                 }
                 resultProgram.push("return " + assign + ";");
             } else if (type == "assign") {
-                debugger
                 let finishChar = words.indexOf(";");
                 let fArray = words.splice(0, finishChar + 1);
                 // TODO 参数存在与否检测，如果原来的语法已经检测那么就不用添加if判断
@@ -904,7 +902,6 @@ if (${conditions}) {
             let formula = parsedData.paramsFormula;
             formula.map(f => {
                 // 合格性验证不转换
-                debugger
                 f.formula = f.formula + ";";
                 let result = programAnalyze(f);
                 result.forEach(r => {

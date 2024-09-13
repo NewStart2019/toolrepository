@@ -18,5 +18,31 @@ RUN curl -o /usr/share/fonts/Times_New_Roman.ttf http://172.16.0.227:84/fonts/Ti
 RUN curl -o /usr/share/fonts/timesbd.ttf http://172.16.0.227:84/fonts/timesbd.ttf
 RUN curl -o /usr/share/fonts/timesbi.ttf http://172.16.0.227:84/fonts/timesbi.ttf
 RUN curl -o /usr/share/fonts/timesi.ttf http://172.16.0.227:84/fonts/timesi.ttf
+RUN curl -o /usr/share/fonts/arial.ttf  http://172.16.0.227:84/fonts/ARIAL.TTF
+RUN curl -o /usr/share/fonts/ariali.ttf http://172.16.0.227:84/fonts/ARIALI.TTF
+RUN curl -o /usr/share/fonts/arialn.ttf http://172.16.0.227:84/fonts/ARIALN.TTF
+RUN curl -o /usr/share/fonts/arialbd.ttf http://172.16.0.227:84/fonts/ARIALBD.TTF
+RUN curl -o /usr/share/fonts/arialbi.ttf http://172.16.0.227:84/fonts/ARIALBI.TTF
+RUN curl -o /usr/share/fonts/arialnb.ttf http://172.16.0.227:84/fonts/ARIALNB.TTF
+RUN curl -o /usr/share/fonts/arialni.ttf http://172.16.0.227:84/fonts/ARIALNI.TTF
+RUN curl -o /usr/share/fonts/arialnbi.ttf http://172.16.0.227:84/fonts/ARIALNBI.TTF
+RUN curl -o /usr/share/fonts/arialuni.ttf http://172.16.0.227:84/fonts/ARIALUNI.TTF
+RUN curl -o /usr/share/fonts/arlrdbd.ttf http://172.16.0.227:84/fonts/ARLRDBD.TTF
+RUN curl -o /usr/share/fonts/ariblk.ttf http://172.16.0.227:84/fonts/ARIBLK.TTF
+RUN curl -o /usr/share/fonts/calist.ttf http://172.16.0.227:84/fonts/CALIST.TTF
+RUN curl -o /usr/share/fonts/calistb.ttf http://172.16.0.227:84/fonts/CALISTB.TTF
+RUN curl -o /usr/share/fonts/calistbi.ttf http://172.16.0.227:84/fonts/CALISTBI.TTF
+RUN curl -o /usr/share/fonts/calisti.ttf http://172.16.0.227:84/fonts/CALISTI.TTF
+RUN curl -o /usr/share/fonts/calif.ttf http://172.16.0.227:84/fonts/CALIF.TTF
+RUN curl -o /usr/share/fonts/califb.ttf http://172.16.0.227:84/fonts/CALIFB.TTF
+RUN curl -o /usr/share/fonts/califi.ttf http://172.16.0.227:84/fonts/CALIFI.TTF
+RUN curl -o /usr/share/fonts/califr.ttf http://172.16.0.227:84/fonts/CALIFR.TTF
+RUN curl -o /usr/share/fonts/calibri.ttf http://172.16.0.227:84/fonts/CALIBRI.TTF
+RUN curl -o /usr/share/fonts/calibriz.ttf http://172.16.0.227:84/fonts/CALIBRIZ.TTF
+RUN curl -o /usr/share/fonts/calibrib.ttf http://172.16.0.227:84/fonts/CALIBRIB.TTF
+RUN curl -o /usr/share/fonts/calibrii.ttf http://172.16.0.227:84/fonts/CALIBRII.TTF
+RUN curl -o /usr/share/fonts/calibril.ttf http://172.16.0.227:84/fonts/CALIBRIL.TTF
+RUN curl -o /usr/share/fonts/calibrili.ttf http://172.16.0.227:84/fonts/CALIBRILI.TTF
 
-RUN chmod +x /usr/share/fonts/*
+RUN chmod 644 /usr/share/fonts/*
+RUN  rm -rf /var/cache/* /tmp/*
