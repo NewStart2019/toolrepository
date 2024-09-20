@@ -1,0 +1,47 @@
+services:
+  zabbix-server:
+    image: zabbix/zabbix-server-mysql:alpine-7.0-latest
+    ports:
+      - "${ZABBIX_SERVER_PORT}:10051"
+    restart: "${RESTART_POLICY}"
+    network_mode: bridge
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 20000
+        hard: 40000
+    deploy:
+      resources:
+        limits:
+          cpus: '0.70'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${DATA_DIRECTORY}/zabbix/alertscripts:/usr/lib/zabbix/alertscripts:ro
+      - ${DATA_DIRECTORY}/zabbix/externalscripts:/usr/lib/zabbix/externalscripts:ro
+      - ${DATA_DIRECTORY}/zabbix/dbscripts:/var/lib/zabbix/dbscripts:ro
+      - ${DATA_DIRECTORY}/zabbix/export:/var/lib/zabbix/export:rw
+      - ${DATA_DIRECTORY}/zabbix/modules:/var/lib/zabbix/modules:ro
+      - ${DATA_DIRECTORY}/zabbix/enc:/var/lib/zabbix/enc:ro
+      - ${DATA_DIRECTORY}/zabbix/ssh_keys:/var/lib/zabbix/ssh_keys:ro
+      - ${DATA_DIRECTORY}/zabbix/mibs:/var/lib/zabbix/mibs:ro
+      - /etc/timezone:/etc/timezone:ro
+    env_file:
+      - .env
+      - .env_db_mysql
+    labels:
+      com.zabbix.os: "Alpine"
+      com.zabbix.description: "Zabbix server with MySQL database support"
+      com.zabbix.dbtype: "mysql"
+  zabbix-web:
+    image: zabbix/zabbix-web-nginx-mysql:7.0-alpine-latest
+    restart: "${RESTART_POLICY}"
+    network_mode: bridge
+    ports:
+      - "9090:8080"
+    env_file:
+      - .env
+      - .env_db_mysql

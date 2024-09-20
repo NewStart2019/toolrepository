@@ -1,0 +1,14 @@
+services:
+  zabbix-agent:
+    container_name: zabbix-agent
+    image: zabbix/zabbix-agent:latest
+    restart: unless-stopped
+    network_mode: bridge
+    environment:
+      # 客户端名称
+      ZBX_HOSTNAME: iot_web
+      # 服务端地址
+      ZBX_SERVER_HOST: 172.16.0.175
+      ZBX_SERVER_PORT: 10051
+    ports:
+      - "10050:10050"
