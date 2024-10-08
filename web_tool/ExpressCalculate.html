@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expression Evaluator</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 500px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Expression Evaluator</h1>
+    <label for="expression">表达式</label><input type="text" id="expression" placeholder="Enter expression (e.g., ≥10)"
+                                                 value="-60±5"
+                                                 tooltip="Enter expression like ≥10, ≤20, -60±5, 10~10"
+/>
+    <label for="values">测试数据</label><input type="text" id="values" placeholder="Enter values (e.g., 10,20,30)"
+                                               value="5, 10, 15, 20, 25, -55, -65"
+/>
+    <button onclick="evaluateMyself()">Evaluate</button>
+    <div class="result" id="result"></div>
+</div>
+
+<script>
+    function evaluateMyself() {
+        const expression = document.getElementById("expression").value;
+        const valuesInput = document.getElementById("values").value;
+        const values = valuesInput.split(',').map(Number);
+        const results = evaluateExpression(expression, values);
+        document.getElementById("result").innerText = `Results: ${results}`;
+    }
+
+    function evaluateExpression(expression, values) {
+        if (expression == null || expression === '' || values == null || values.length === ""){
+            return null;
+        }
+        if (Array.isArray(values)){
+            values = values.map(Number);
+        } else {
+            values = values + "";
+            values = values.split(",").map(Number);
+        }
+        const results = values.map(value => {
+            if (expression.includes('≥')) {
+                const threshold = parseFloat(expression.split('≥')[1]);
+                return value >= threshold;
+            } else if (expression.includes('≤')) {
+                const threshold = parseFloat(expression.split('≤')[1]);
+                return value <= threshold;
+            } else if (expression.includes('±')) {
+                const [base, range] = expression.split('±').map(Number);
+                return value >= (base - range) && value <= (base + range);
+            } else if (expression.includes('~')) {
+                const [start, end] = expression.split('~').map(Number);
+                return value >= start && value <= end;
+            } else if (expression.includes('<')) {
+                const threshold = parseFloat(expression.split('<')[1]);
+                return value < threshold;
+            } else if (expression.includes('>')) {
+                const threshold = parseFloat(expression.split('>')[1]);
+                return value > threshold;
+            }
+            return false;
+        });
+
+        return results.join(', ');
+    }
+</script>
+
+</body>
+</html>
