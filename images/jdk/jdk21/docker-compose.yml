@@ -5,3 +5,13 @@ services:
       context: .
       dockerfile: Dockerfile
     image: 172.16.0.197:8083/tool/jdk21:1.4
+  alpine_jdk21:
+    build:
+      context: .
+      dockerfile: alphineDockerfile
+    image: 172.16.0.197:8083/tool/alpine-jdk21:1.0
+  alpine_jdk21_special:
+    build:
+      context: .
+      dockerfile: alphineBigDockerfile
+    image: 172.16.0.197:8083/tool/alpine_jdk21_special-jdk21:1.0

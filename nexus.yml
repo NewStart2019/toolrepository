@@ -1,7 +1,7 @@
 name: 'nexus3'
 services:
   nexus:
-    image: sonatype/nexus3
+    image: docker.m.daocloud.io/sonatype/nexus3
     container_name: nexus3
     user: root
     ports:

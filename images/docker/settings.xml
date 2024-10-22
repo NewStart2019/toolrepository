@@ -22,7 +22,7 @@
     <mirrors>
         <mirror>
             <id>nexus</id>
-            <url>http://172.16.0.145:5001/repository/maven-public/</url>
+            <url>http://172.16.0.197:5001/repository/maven-public/</url>
             <mirrorOf>*</mirrorOf>
         </mirror>
         <mirror>
