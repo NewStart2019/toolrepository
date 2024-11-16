@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style lang="css">
+        body {
+            font-family: Helvetica, serif;
+            background-color: #F0F0F0;
+            margin: 0;
+            padding: 0;
+        }
+
+        #loadedFilesInfo {
+            display: block;
+            padding: 0.5em;
+            margin: 0.5em;
+            font-size: 1.2em;
+            background: #ccc;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+    </style>
+
+</head>
+<body>
+
+<div id="loadedFilesInfo">
+    <div class="openFilesContainer">
+        <form id="fileChooserForm" class="fileChooserForm">
+            <!--            class="fileInputLabel"-->
+            <label id="fileInputLabel" for="fileInput" autofocus>
+                To view another file(s): <b>Drag & Drop</b> <span style="font-family: monospace">*.csv</span> file(s) on
+                the page,
+                or <b>click</b> here to use file-choosing dialog.
+            </label>
+            <input type="file"
+                   id="fileInput"
+                   accept="text/csv" multiple
+                   class="fileInput"
+                   title="Select 'open-telemetry-metrics.*.csv' files"
+                   onchange="readFiles(event.target.files)"
+            />
+
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

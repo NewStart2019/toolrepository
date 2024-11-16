@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Grid with WebGL</title>
+<style>
+  body { margin: 0; }
+  canvas { display: block; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/3.4.1/gl-matrix-min.js"></script>
+</head>
+<body>
+<canvas id="webgl-canvas"></canvas>
+<script>
+  // 确保glMatrix已经加载
+  if (typeof glMatrix !== 'undefined' && typeof mat4 !== 'undefined') {
+    const canvas = document.getElementById('webgl-canvas');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (!gl) {
+      alert('WebGL is not supported in your browser.');
+    }
+
+    // 设置视口
+    gl.viewport(0, 0, canvas.width, canvas.height);
+
+    // 清除颜色
+    gl.clearColor(0.1, 0.1, 0.1, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST);
+
+    // 顶点着色器
+    const vertexShaderSource = `
+      attribute vec3 aPosition;
+      uniform mat4 uModelViewMatrix;
+      uniform mat4 uProjectionMatrix;
+      void main() {
+        gl_Position = uProjectionMatrix * uModelViewMatrix * vec4(aPosition, 1.0);
+      }
+    `;
+
+    // 片段着色器
+    const fragmentShaderSource = `
+      precision mediump float;
+      uniform vec3 uColor;
+      void main() {
+        gl_FragColor = vec4(uColor, 1.0);
+      }
+    `;
+
+    // 创建着色器
+    function createShader(gl, type, source) {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
+        return null;
+      }
+      return shader;
+    }
+
+    // 创建着色器程序
+    function createProgram(gl, vertexShader, fragmentShader) {
+      const program = gl.createProgram();
+      gl.attachShader(program, vertexShader);
+      gl.attachShader(program, fragmentShader);
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        console.error('Unable to initialize the shader program: ' + gl.getProgramInfoLog(program));
+        return null;
+      }
+      return program;
+    }
+
+    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    const program = createProgram(gl, vertexShader, fragmentShader);
+
+    // 获取uniform和attribute的位置
+    const aPositionLocation = gl.getAttribLocation(program, 'aPosition');
+    const uModelViewMatrixLocation = gl.getUniformLocation(program, 'uModelViewMatrix');
+    const uProjectionMatrixLocation = gl.getUniformLocation(program, 'uProjectionMatrix');
+    const uColorLocation = gl.getUniformLocation(program, 'uColor');
+
+    // 立方体顶点数据
+    const vertices = [
+      -0.5, -0.5, -0.5,
+       0.5, -0.5, -0.5,
+       0.5,  0.5, -0.5,
+      -0.5,  0.5, -0.5,
+      -0.5, -0.5,  0.5,
+       0.5, -0.5,  0.5,
+       0.5,  0.5,  0.5,
+      -0.5,  0.5,  0.5
+    ];
+
+    // 立方体索引数据
+    const indices = [
+      0, 1, 2, 0, 2, 3, // 前面
+      4, 5, 6, 4, 6, 7, // 后面
+      0, 4, 5, 0, 5, 1, // 左面
+      2, 6, 7, 2, 7, 3, // 右面
+      0, 3, 7, 0, 7, 4, // 底面
+      1, 5, 6, 1, 6, 2  // 顶面
+    ];
+
+    // 创建缓冲区
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+    const indexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
+    // 设置相机和投影矩阵
+    const fieldOfView = 45 * Math.PI / 180;   // in radians
+    const aspect = canvas.clientWidth / canvas.clientHeight;
+    const zNear = 0.1;
+    const zFar = 100.0;
+    const projectionMatrix = mat4.create();
+    mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
+
+    const modelViewMatrix = mat4.create();
+    mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, -5]);
+
+    // 绘制函数
+    function drawCube(x, y, z, color) {
+      gl.uniform3fv(uColorLocation, color);
+
+      const cubeModelViewMatrix = mat4.create();
+      mat4.translate(cubeModelViewMatrix, modelViewMatrix, [x, y, z]);
+      gl.uniformMatrix4fv(uModelViewMatrixLocation, false, cubeModelViewMatrix);
+      gl.uniformMatrix4fv(uProjectionMatrixLocation, false, projectionMatrix);
+
+      gl.useProgram(program);
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.vertexAttribPointer(aPositionLocation, 3, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(aPositionLocation);
+
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+      gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+    }
+
+    // 主渲染循环
+    function render() {
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+      const layers = 4;
+      const rows = 2;
+      const cols = 3;
+      const cellSize = 2; // 每个单元格的大小
+
+      for (let l = 0; l < layers; l++) {
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const x = c * cellSize - (cols - 1) * cellSize / 2;
+            const y = r * cellSize - (rows - 1) * cellSize / 2;
+            const z = l * cellSize - (layers - 1) * cellSize / 2;
+            drawCube(x, y, z, [Math.random(), Math.random(), Math.random()]);
+          }
+        }
+      }
+
+      requestAnimationFrame(render);
+    }
+
+    render();
+
+    // 处理窗口大小变化
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      const aspect = canvas.clientWidth / canvas.clientHeight;
+      mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
+      render();
+    });
+  } else {
+    console.error('glMatrix or mat4 is not defined. Please check the library loading.');
+  }
+</script>
+</body>
+</html>

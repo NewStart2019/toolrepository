@@ -1,0 +1,12 @@
+name: 'mrdoc'
+services:
+  mrdoc:
+    image: registry.cn-hangzhou.aliyuncs.com/zmister/mrdoc:v9.0
+    container_name: mrdoc
+    restart: unless-stopped
+    ports:
+      - 10086:10086
+    volumes:
+      - /app/mrdoc:/app/MrDoc
+# https://doc.mrdoc.pro/doc/3958/ 官方安装文档
+# https://doc.mrdoc.pro/doc/79/ 写文档帮助手册
