@@ -1,7 +1,7 @@
 name: 'nexus3'
 services:
   nexus:
-    image: docker.m.daocloud.io/sonatype/nexus3
+    image: sonatype/nexus3:latest
     container_name: nexus3
     user: root
     ports:
@@ -9,6 +9,13 @@ services:
       - 5000:5000
       - 8083:8083
     network_mode: bridge
+    environment:
+      - TZ=Asia/Shanghai
+#      - NEXUS_DB_HOST=172.16.0.197
+#      - NEXUS_DB_PORT=5432
+#      - NEXUS_DB_NAME=nexus
+#      - NEXUS_DB_USERNAME=root
+#      - NEXUS_DB_PASSWORD=ePVw#DD#q
+#      - NEXUS_JAVA_OPTS=Xms2703m -Xmx2703m -XX:MaxDirectMemorySize=2703m -Djava.util.prefs.userRoot=/nexus-data/javaprefs
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - $PWD/nexus-data:/nexus-data
+      - ./nexus-data:/nexus-data
