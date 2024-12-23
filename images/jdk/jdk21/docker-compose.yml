@@ -14,4 +14,4 @@ services:
     build:
       context: .
       dockerfile: alphineBigDockerfile
-    image: 172.16.0.197:8083/tool/alpine_jdk21_special-jdk21:1.0
+    image: 172.16.0.197:8083/tool/alpine_jdk21_special-jdk21:1.1

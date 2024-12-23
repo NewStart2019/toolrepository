@@ -1,4 +1,4 @@
-FROM docker.m.daocloud.io/alpine:3.20
+FROM alpine:3.20
 
 # 设置阿里云镜像仓库
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
@@ -47,6 +47,12 @@ RUN curl -o /usr/share/fonts/calibrib.ttf http://172.16.0.227:84/fonts/CALIBRIB.
 RUN curl -o /usr/share/fonts/calibrii.ttf http://172.16.0.227:84/fonts/CALIBRII.TTF
 RUN curl -o /usr/share/fonts/calibril.ttf http://172.16.0.227:84/fonts/CALIBRIL.TTF
 RUN curl -o /usr/share/fonts/calibrili.ttf http://172.16.0.227:84/fonts/CALIBRILI.TTF
+
+RUN curl -o /usr/share/fonts/SJQY.ttf http://172.16.0.227:84/fonts/SJQY.TTF
+RUN curl -o /usr/share/fonts/SJQY1.ttf http://172.16.0.227:84/fonts/SJQY1.TTF
+RUN curl -o /usr/share/fonts/SJQY2.ttf http://172.16.0.227:84/fonts/SJQY2.TTF
+RUN curl -o /usr/share/fonts/SJQY3.ttf http://172.16.0.227:84/fonts/SJQY3.TTF
+
 RUN apk del curl
 # 删除缓存
 RUN rm -rf /var/cache/apk/* && rm -rf /tmp/*
