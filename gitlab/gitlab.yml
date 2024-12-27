@@ -1,7 +1,7 @@
 name: gitlab
 services:
   gitlab:
-    image: '172.16.0.197:8083/gitlab/gitlab-ce:16.11.8'
+    image: '172.16.0.197:8083/gitlab/gitlab-ce:17.6.1-ce.0'
     container_name: 'gitlab'
     restart: always
     hostname: '172.16.0.197'
