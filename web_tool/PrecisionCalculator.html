@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>decimal高精度计算</title>
+    <style>
+        /* 现有样式 */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        input[type="number"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        select {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+        }
+
+        /* 新增的模态框样式 */
+        .modal {
+            display: none; /* 默认隐藏 */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0, 0, 0);
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 5px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-family: monospace, Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono';
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>decimal高精度计算</h2>
+    <!-- 添加查看说明按钮 -->
+    <button onclick="showInstructions()">查看说明</button>
+    <input type="number" id="initialValue" placeholder="初始值" step="any">
+    <div id="operations"></div>
+    <button onclick="addOperation()">添加操作</button>
+    <button onclick="calculate()">计算</button>
+
+    <!-- 新增的表达式显示区域 -->
+    <div class="result" id="expression"></div>
+    <div class="result" id="result"></div>
+</div>
+
+<!-- 模态框 -->
+<div id="instructionsModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeInstructions()">&times;</span>
+        <h2>怎样使用高精度计算</h2>
+        <p><b>此计算器允许您使用十进制数执行精确的算术运算。</b></p>
+        <ul>
+            <li>
+                输入初始值，然后通过单击“添加操作”添加所需数量的操作。
+            </li>
+            <li>
+                选择操作类型（<span style="color: red; font-family: bold;">add、subtract、multiply、divide</span>），并为每个操作输入值。
+            </li>
+            <li>
+                单击“计算”查看按顺序应用的所有操作的结果。
+            </li>
+        </ul>
+        <p>注：不允许除零。</p>
+
+        <h3>代码示例</h3>
+        <pre>
+            <code>
+// 创建一个 PrecisionCalculator 实例，初始值为10.5
+const calc = new PrecisionCalculator(10.5);
+
+// 执行一系列运算
+calc.add(5);         // 加法: 10.5 + 5 = 15.5
+calc.subtract(2.5);  // 减法: 15.5 - 2.5 = 13
+calc.multiply(2);    // 乘法: 13 * 2 = 26
+calc.divide(4);      // 除法: 26 / 4 = 6.5
+
+// 输出结果，保留10位小数点
+console.log('Result:', calc.toFixed(10)); // Result: 6.5000000000
+
+// 整合起来写：(10.5 + 5 - 2.5) * 2 / 4
+calc.add(5).subtract(2.5).multiply(2).divide(4).toFixed(10);//Result: 6.5000000000
+            </code>
+        </pre>
+    </div>
+</div>
+
+<script src="decimal.min.js"></script>
+<script src="precision-calculator.js"></script>
+<script>
+  function addOperation() {
+    const operationsDiv = document.getElementById('operations');
+    const operationDiv = document.createElement('div');
+    operationDiv.innerHTML = `
+        <select name="operation">
+            <option value="add">add</option>
+            <option value="subtract">subtract</option>
+            <option value="multiply">multiply</option>
+            <option value="divide">divide</option>
+        </select>
+        <input type="number" name="value" placeholder="Value" step="any">
+        <button onclick="removeOperation(this)">移除</button>
+    `;
+    operationsDiv.appendChild(operationDiv);
+  }
+
+  function removeOperation(button) {
+    button.parentElement.remove();
+  }
+
+  function calculate() {
+    const initialValue = parseFloat(document.getElementById('initialValue').value);
+    if (isNaN(initialValue)) {
+      alert('请输入有效的初始值。');
+      return;
+    }
+
+    let expression = initialValue.toString(); // 初始化表达式字符串
+    const calc = new PrecisionCalculator(initialValue);
+
+    const operations = document.getElementsByName('operation');
+    const values = document.getElementsByName('value');
+
+    let lastOperationWasAdditive = false; // 用于跟踪上一个操作是否为加法或减法
+
+    for (let i = 0; i < operations.length; i++) {
+      const op = operations[i].value;
+      const val = parseFloat(values[i].value);
+      if (isNaN(val)) {
+        alert(`请输入有效的数值用于第 ${i + 1} 个操作。`);
+        return;
+      }
+
+      try {
+        switch (op) {
+          case 'add':
+            expression += ` + ${val}`;
+            calc.add(val);
+            lastOperationWasAdditive = true;
+            break;
+          case 'subtract':
+            expression += ` - ${val}`;
+            calc.subtract(val);
+            lastOperationWasAdditive = true;
+            break;
+          case 'multiply':
+            if (lastOperationWasAdditive) {
+              expression = `(${expression})`;
+            }
+            expression += ` * ${val}`;
+            calc.multiply(val);
+            lastOperationWasAdditive = false;
+            break;
+          case 'divide':
+            if (lastOperationWasAdditive) {
+              expression = `(${expression})`;
+            }
+            expression += ` / ${val}`;
+            calc.divide(val);
+            lastOperationWasAdditive = false;
+            break;
+          default:
+            throw new Error('无效的操作');
+        }
+      } catch (error) {
+        alert(error.message);
+        return;
+      }
+    }
+
+    // 显示构建的表达式
+    const expressionElement = document.getElementById('expression');
+    expressionElement.textContent = `表达式: ${expression}`;
+
+    // 显示计算结果
+    const resultElement = document.getElementById('result');
+    resultElement.textContent = `结果: ${calc.toFixed(10)}`;
+  }
+
+  function showInstructions() {
+    document.getElementById('instructionsModal').style.display = 'block';
+  }
+
+  function closeInstructions() {
+    document.getElementById('instructionsModal').style.display = 'none';
+  }
+</script>
+
+</body>
+</html>

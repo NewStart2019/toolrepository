@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Random Falling 福</title>
+  <style>
+    /* styles.css */
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background-color: #f8f6f6;
+    }
+
+    #container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none; /* 确保福字不会干扰用户交互 */
+    }
+
+    .fu {
+      position: absolute;
+      width: 50px; /* 调整福字图片大小 */
+      height: 50px;
+      opacity: 0.8;
+      animation: fall linear infinite;
+      transform-origin: center center;
+    }
+
+    @keyframes fall {
+      0% {
+        top: -10%;
+        opacity: 0.7;
+      }
+      100% {
+        top: 100%;
+        opacity: 0.5;
+      }
+    }
+
+  </style>
+</head>
+<body>
+<div id="container"></div>
+<script>
+  // script.js
+  document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('container');
+    const numberOfFus = 50; // 可以根据需要调整数量
+
+    function createFu() {
+      const fu = document.createElement('img');
+      fu.src = 'fu.png'; // 替换为你的福字图片路径
+      fu.className = 'fu';
+      container.appendChild(fu);
+
+      // 设置随机位置、大小和倾斜角度
+      fu.style.left = `${Math.random() * 100}vw`;
+      // fu.style.width = `${Math.random() * 4 + 1}rem`; // 随机大小
+      fu.style.transform = `rotate(${Math.random() * 90 - 0}deg)`; // 随机倾斜角度
+      fu.style.animationDuration = `5s`; // 随机下落时间
+      fu.style.animationDelay = `${Math.random() * 3}s`; // 随机延迟开始时间
+      if (Math.random() > 0.5) {
+        fu.style.animationTimingFunction = 'ease-in';
+      }
+      return fu;
+    }
+
+    function animateFus() {
+      for (let i = 0; i < numberOfFus; i++) {
+        createFu();
+      }
+    }
+
+    animateFus();
+
+    // 可选：定期移除旧的福字并创建新的福字以保持性能
+    setInterval(() => {
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+      animateFus();
+    }, 60000); // 每分钟刷新一次
+  });
+</script>
+</body>
+</html>
