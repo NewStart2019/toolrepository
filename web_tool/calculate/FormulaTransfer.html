@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>四则运算计算器</title>
+    <title>四则运算|布尔表达式|条件表达式|转换器</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -49,7 +49,7 @@
 <body>
 
 <div class="container">
-    <h2>精度计算公式转换</h2>
+    <h2>四则运算|布尔表达式|条件表达式 转换器</h2>
     <input type="text" id="expression" placeholder="请输入四则运算表达式..."/>
     <button onclick="calculate()">计算</button>
     <p id="result"></p>
@@ -57,17 +57,84 @@
 
 <script src="ReversePolishNotation.js"></script>
 <script>
-  function calculate() {
-    debugger
-    const expression = document.getElementById('expression').value.trim();
-    try {
-      let rpn = new FourFundamentaExpression();
-      const result = rpn.transferExpression(expression);
-      document.getElementById('result').innerText = `${result}`;
-    } catch (error) {
-      document.getElementById('result').innerText = '无效的表达式';
+    function calculate() {
+        const expression = document.getElementById('expression').value.trim();
+        try {
+            let fArray = tokenizeJavaCode(expression);
+            fArray = fArray.map((item) => item.value);
+            document.getElementById('result').innerText = dealExpression(fArray);
+        } catch (error) {
+            document.getElementById('result').innerText = '无效的表达式';
+        }
     }
-  }
+
+    /**
+     * 判断是否是布尔表达式
+     * @param element 数组
+     * @returns {boolean|boolean|*}
+     */
+    function isBooleanExpression(element) {
+        // 定义常见布尔操作符和值的集合
+        const booleanOperators = ['==', '!=', '<', '>', '<=', '>=', '&&', '||', '!'];
+        const booleanValues = ['true', 'false'];
+        let result = false;
+        for (let i = 0; i < element.length; i++){
+            if (booleanValues.includes(element[i].toLowerCase()) ||
+                booleanOperators.includes(element[i])){
+                result = true;
+                break;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 处理表达式包括 条件表达式、四则运算、返回变量常量
+     * @param fArray
+     * @returns {*|string}
+     */
+    function dealExpression(fArray) {
+        let result = []
+        debugger
+        if (fArray.length === 1) {
+            if (isValidVariableNameOrChain(fArray[0])) {
+                return `formData.${fArray[0]}`;
+            } else if (isStrictNumeric(fArray[0])) {
+                return fArray[0];
+            }
+            return fArray[0];
+        } else if (fArray.indexOf("?") !== -1) {
+            // 判断是否是条件表达式
+            let qustion = fArray.indexOf("?");
+            let colon = fArray.indexOf(":");
+            // 从fArray获取？后面的值
+            let trueValue = fArray.slice(qustion + 1, colon);
+            let falseValue = fArray.slice(colon + 1, fArray.length);
+            let conditionalExpression = fArray.slice(0, qustion);
+            let booleanExpression = new BooleanExpression();
+            result.push(booleanExpression.transferExpression(conditionalExpression));
+            let fourFundamentaExpression = new FourFundamentaExpression();
+            if (trueValue.length === 1) {
+                result.push(dealExpression(trueValue));
+            } else {
+                result.push(fourFundamentaExpression.transferExpression(trueValue));
+            }
+            if (falseValue.length === 1) {
+                result.push(dealExpression(falseValue));
+            } else {
+                result.push(fourFundamentaExpression.transferExpression(falseValue));
+            }
+            return `${result[0]} ? ${result[1]} : ${result[2]}`;
+        } else if (isBooleanExpression(fArray)) {
+            let booleanExpression = new BooleanExpression();
+            return booleanExpression.transferExpression(fArray);
+        } else {
+            // 暂不支持处理
+            let fourFundamentaExpression = new FourFundamentaExpression();
+            return fourFundamentaExpression.transferExpression(fArray);
+        }
+    }
+
 </script>
 </body>
 </html>

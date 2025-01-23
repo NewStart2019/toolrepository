@@ -1,14 +1,14 @@
 <template>
   <CodeEditor :lang="language"/>
+  <Test_Editor/>
 </template>
 
 <script setup lang="ts">
-import CodeEditor  from "./components/CodeEditor.vue";
-import {ref, type Ref} from "vue";
+import CodeEditor from "./components/CodeEditor.vue";
+import Test_Editor  from "./components/Test_Editor.vue";
+import {ref} from "vue";
 
 /** text */
-const value: Ref<string> = ref('function example() {\n  console.log("Hello, world!");\n}');
-const theme = ref('default');
 const language = ref('javascript');
 </script>
 

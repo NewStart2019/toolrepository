@@ -691,70 +691,9 @@
         return jsCode?.trim();
     }
 
-    /**
-     * 转换公式为使用精度计算
-     * @param resultVar 结果id
-     * @param formula 公式表达式 数组
-     * @param scale 修约
-     * @param isCheck 是否添加 变量检测条件
-     * @param isEvenRound 是否修约
-     * @returns {string | undefined}
-     */
-    function formulaAnalyzePrecision(resultVar, formula, scale, isCheck, isEvenRound) {
-      const expression = formula.join(" ");
-
-      // Find all variables in the expression (excluding numbers)
-      const variablePattern = /\b(?!\d+\b)\w+\b/g;
-      const variables = [...new Set(expression.match(variablePattern))];
-
-      // Generate the conditions to check if all variables are defined
-      const conditions = variables.map(variable => `(formData.${variable}  != null)`).join(' && ');
-
-      // Replace variables in the expression with formData equivalents
-      // var modifiedExpression = expression.replace(/\b(?!\d+\b)(\w+)\b/g, 'formData.$1');
-      // modifiedExpression = modifiedExpression.replace(";", "");
-      var modifiedExpression = evaluateExpression(formula);
-
-      let jsCode;
-      if (resultVar == null && isEvenRound) {
-        jsCode = isEvenRound ? `tool.cpEvenRound(${modifiedExpression}}, ${scale})` : modifiedExpression;
-      } else {
-        jsCode = isEvenRound ? `fapi.setValue('${resultVar}', tool.cpEvenRound(${modifiedExpression},${scale}) + "")` :
-          `fapi.setValue('${resultVar}', ${modifiedExpression} + "")`;
-      }
-      if (isCheck) {
-        jsCode = `if (${conditions}) {
-    ${jsCode};
-} `;
-      }
-      return jsCode?.trim();
-    }
-
     function isNumeric(value) {
         const num = Number(value);
         return !isNaN(num) && value === num.toString();
-    }
-
-    /**
-     * 分词 Java 代码
-     * @param {string} code - Java 代码字符串
-     * @returns {string[]} - 分词后的结果数组
-     */
-    function tokenizeJavaCode(code) {
-      // 定义正则表达式的各个部分
-      const regex = /"(?:\\.|[^"])*"|(?:'(?:\\.|[^'])*')|\/\/.*|\/\*[\s\S]*?\*\/|\b\w+\b|[{}()$$;,.<>?~!@#$%^&*+=|:\\/-]+/g;
-
-      // 使用 match 方法获取所有匹配的结果
-      let tokens = code.match(regex);
-
-      // 如果没有找到任何 token，则返回空数组
-      if (!tokens) return [];
-
-      // 清理结果：去除多余的空白字符和注释
-      tokens = tokens.map(token => token.trim())
-        .filter(token => token.length > 0 && !token.startsWith('//') && !token.startsWith('/*'));
-
-      return tokens;
     }
 
     /**
@@ -796,12 +735,92 @@
         return result;
     }
 
+    /**
+     * 处理表达式包括 条件表达式、四则运算、返回变量常量
+     * @param fArray
+     * @returns {*|string}
+     */
     function dealExpression(fArray) {
-      if (fArray.length === 1){
-        return `formData.${fArray[0]}`;
-      } else if (isBooleanExpression(fArray)){
-        // 把
-      }
+        let result = []
+        debugger
+        if (fArray.length === 1) {
+            if (isValidVariableNameOrChain(fArray[0])) {
+                return `formData.${fArray[0]}`;
+            } else if (isStrictNumeric(fArray[0])) {
+                return fArray[0];
+            }
+            return fArray[0];
+        } else if (fArray.indexOf("?") !== -1) {
+            // 判断是否是条件表达式
+            let qustion = fArray.indexOf("?");
+            let colon = fArray.indexOf(":");
+            // 从fArray获取？后面的值
+            let trueValue = fArray.slice(qustion + 1, colon);
+            let falseValue = fArray.slice(colon + 1, fArray.length);
+            let conditionalExpression = fArray.slice(0, qustion);
+            let booleanExpression = new BooleanExpression();
+            result.push(booleanExpression.transferExpression(conditionalExpression));
+            let fourFundamentaExpression = new FourFundamentaExpression();
+            if (trueValue.length === 1) {
+                result.push(dealExpression(trueValue));
+            } else {
+                result.push(fourFundamentaExpression.transferExpression(trueValue));
+            }
+            if (falseValue.length === 1) {
+                result.push(dealExpression(falseValue));
+            } else {
+                result.push(fourFundamentaExpression.transferExpression(falseValue));
+            }
+            return `${result[0]} ? ${result[1]} : ${result[2]}`;
+        } else if (isBooleanExpression(fArray)) {
+            let booleanExpression = new BooleanExpression();
+            return booleanExpression.transferExpression(fArray);
+        } else {
+            // 暂不支持处理
+            let fourFundamentaExpression = new FourFundamentaExpression();
+            return fourFundamentaExpression.transferExpression(fArray);
+        }
+    }
+
+
+    /**
+     * 转换公式为使用精度计算
+     * @param resultVar 结果id
+     * @param formula 公式表达式 数组
+     * @param scale 修约
+     * @param isCheck 是否添加 变量检测条件
+     * @param isEvenRound 是否修约
+     * @returns {string | undefined}
+     */
+    function formulaAnalyzePrecision(resultVar, formula, scale, isCheck, isEvenRound) {
+        const expression = formula.join(" ");
+
+        // Find all variables in the expression (excluding numbers)
+        const variablePattern = /\b(?!\d+\b)\w+\b/g;
+        const variables = [...new Set(expression.match(variablePattern))];
+
+        // Generate the conditions to check if all variables are defined
+        const conditions = variables.map(variable => `(formData.${variable}  != null)`).join(' && ');
+
+        // Replace variables in the expression with formData equivalents
+        // var modifiedExpression = expression.replace(/\b(?!\d+\b)(\w+)\b/g, 'formData.$1');
+        // modifiedExpression = modifiedExpression.replace(";", "");
+        var modifiedExpression = dealExpression(formula);
+        const isBoolExpression = formula.indexOf("?") !== -1;
+
+        let jsCode;
+        if (resultVar == null && isEvenRound) {
+            jsCode = isEvenRound ? `tool.cpEvenRound(${modifiedExpression}}, ${scale})` : modifiedExpression;
+        } else {
+            jsCode = isEvenRound ? `fapi.setValue('${resultVar}', tool.cpEvenRound(${modifiedExpression},${scale}) + "")` :
+                `fapi.setValue('${resultVar}', ${modifiedExpression} ${isBoolExpression?"":"+ \"\""})`;
+        }
+        if (isCheck) {
+            jsCode = `if (${conditions}) {
+    ${jsCode};
+} `;
+        }
+        return jsCode?.trim();
     }
 
     /**
@@ -817,7 +836,8 @@
         const regex = /(?:\".*?\"|\'.*?\')|[^ \s]+/g;
         const calculateChar = ["+", "-", "*", "/", "(", ")", ";", "?", ">", ">=", "<", "<=", "==", "!=", "=", ":"];
         const keywords = ["null"];
-        const words = tokenizeJavaCode(formula);
+        let words = tokenizeJavaCode(formula);
+        words = words.map((item) => item.value);
         var types = ["if", "for", "while", "return"]
         const variablePattern = /\b(?!\d+\b)\w+\b/g;
         const stringOrNumberPattern = /(^\".*?\"|^\'.*?\')|(^[\d]+)/g;
@@ -932,9 +952,8 @@
                     fArray.pop();
                 }
                 // 添加 变量检测条件、不修约
-                debugger
                 let assign = formulaAnalyzePrecision(fArray[0], fArray.slice(2), null, true, false);
-                resultProgram.push(assign + ";");
+                resultProgram.push(assign);
             } else {
                 // d=Pd1>=Pd2?Pd1-Pd2:Pd2-Pd1;
                 // if d>0.03 then exception('2次平行差值大于0.03g/cm³，应重新试验');
@@ -959,13 +978,7 @@
                         ? fArray[fArray.length - 3] : "formData." + fArray[fArray.length - 3]}'})`);
                 } else if (fArray.indexOf("?") !== -1){
                     // 判断是否是条件表达式
-                    let qustion = fArray.indexOf("?");
-                    let colon = fArray.indexOf(":");
-                    // 从fArray获取？后面的值
-                    let trueValue = fArray.slice(qustion + 1, colon);
-                    let falseValue = fArray.slice(colon + 1, fArray.length);
-                    let conditionalExpression = fArray.slice(0, qustion);
-                    resultProgram.push(formulaAnalyzePrecision(resultVar, fArray, f.scale, true, f.scale != null));
+                    resultProgram.push(dealExpression(fArray));
                 } else if (isHaveCalculate) {
                     // 如果含有加减乘除（特殊处理）
                     resultProgram.push(formulaAnalyzePrecision(resultVar, fArray, f.scale, true, f.scale != null));

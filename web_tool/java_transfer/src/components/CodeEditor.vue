@@ -11,10 +11,11 @@
 
     <code-mirror
         v-model="code"
-        basic
+        placeholder="Enter code here"
+        :style="{ height: '100%' }"
+        :extensions="cmOptions.extensions"
         :lang="lang"
         :phrases="phrases"
-        :theme="selectedTheme"
     />
   </div>
 </template>
@@ -49,7 +50,7 @@ const lang: LanguageSupport = md();
 const themes = [
   { label: 'One Dark', value: oneDark },
 ];
-const selectedTheme = ref(oneDark);
+const selectedTheme = ref('One Dark');
 const code = ref(`function example() {\n  console.log("Hello, world!");\n}`);
 
 const phrases: Record<string, string> = {
@@ -97,6 +98,11 @@ const copyCode = async () => {
   } catch (err) {
     alert('复制失败，请手动复制！');
   }
+};
+
+const cmOptions = {
+  extensions: [javascript()],
+  theme: 'dark'
 };
 
 </script>
