@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>四则运算计算器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        input[type="text"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        p {
+            margin-top: 10px;
+            font-weight: bold;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>精度计算公式转换</h2>
+    <input type="text" id="expression" placeholder="请输入四则运算表达式..."/>
+    <button onclick="calculate()">计算</button>
+    <p id="result"></p>
+</div>
+
+<script src="ReversePolishNotation.js"></script>
+<script>
+  function calculate() {
+    debugger
+    const expression = document.getElementById('expression').value.trim();
+    try {
+      let rpn = new FourFundamentaExpression();
+      const result = rpn.transferExpression(expression);
+      document.getElementById('result').innerText = `${result}`;
+    } catch (error) {
+      document.getElementById('result').innerText = '无效的表达式';
+    }
+  }
+</script>
+</body>
+</html>

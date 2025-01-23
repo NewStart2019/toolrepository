@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "compilerOptions": {
+    "maxNodeModuleJsDepth": 50
+  },
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
