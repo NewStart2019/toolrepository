@@ -4,23 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JSON数据复制与字段增加</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/base16-day.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/material.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/idea.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/darcula.min.css">
+    <link rel="stylesheet" href="./CodeMirror6/lib/codemirror.css">
+    <link rel="stylesheet" href="./CodeMirror6/theme/base16-light.css">
+    <link rel="stylesheet" href="./CodeMirror6/theme/material.css">
+    <link rel="stylesheet" href="./CodeMirror6/theme/idea.css"/>
+    <link rel="stylesheet" href="./CodeMirror6/theme/darcula.css"/>
+    <link rel="stylesheet" href="./CodeMirror6/addon/fold/foldgutter.css">
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/javascript/javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/display/placeholder.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/fold/foldcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/fold/foldgutter.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/fold/brace-fold.min.js"></script>
+    <script src="./CodeMirror6/lib/codemirror.js"></script>
+    <script src="./CodeMirror6/mode/javascript/javascript.js"></script>
+    <script src="./CodeMirror6/addon/display/placeholder.js"></script>
+    <script src="./CodeMirror6/addon/fold/foldcode.js"></script>
+    <script src="./CodeMirror6/addon/fold/foldgutter.js"></script>
+    <script src="./CodeMirror6/addon/fold/brace-fold.js"></script>
     <!-- 引入 CodeMirror 搜索插件 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/search/search.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/search/searchcursor.js"></script>
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/fold/foldgutter.min.css">
+    <script src="./CodeMirror6/addon/search/search.js"></script>
+    <script src="./CodeMirror6/addon/search/searchcursor.js"></script>
+    <script src="./CodeMirror6/addon/display/fullscreen.js"></script>
+    <script src="./CodeMirror6/addon/edit/closetag.js"></script>
+    <script src="./CodeMirror6/addon/edit/closebrackets.js"></script>
+    <script src="./CodeMirror6/mode/css/css.js"></script>
+    <script src="./CodeMirror6/addon/edit/matchtags.js"></script>
+    <script src="./CodeMirror6/addon/fold/xml-fold.js"></script>
+    <script src="./CodeMirror6/addon/edit/matchbrackets.js"></script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -195,6 +202,13 @@
             word-wrap: break-word;
             overflow: auto;
         }
+
+        .CodeMirror-fullscreen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            height: auto;
+            z-index: 9;
+        }
     </style>
 </head>
 <body>
@@ -211,7 +225,7 @@
             <select id="themeSelector">
                 <option value="darcula" selected>darcula</option>
                 <option value="idea">idea</option>
-                <option value="base16-day">Base16 Day</option>
+                <option value="base16-light">Base16 Light</option>
                 <option value="material">Material</option>
             </select>
             <button class="beautifyJSON" onclick="beautifyJSON()">美化JSON数据</button>
@@ -281,6 +295,7 @@
             <h3>2、快捷键</h3>
             <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ctrl+Y：收起所有代码</p>
             <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ctrl+G：收起当前光标所在的行的{}代码块</p>
+            <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;F11：全屏编辑代码，Esc退出全屏编辑</p>
             <h3>3、使用示例</h3>
             <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;在左侧编辑框中输入下面左侧的json数据，然后在下方的指定字段名输入框中输入
                 <b class="red">addtion.0.cpu</b>路径和<b class="red">type</b>，然后输入起始数字31、1和复制次数1，然后输出结果如右下：
@@ -322,8 +337,8 @@
     </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsonlint/1.6.0/jsonlint.min.js"></script>
-<script src="ReversePolishNotation.js"></script>
+<script src="./CodeMirror6/js/jsonlint.min.js"></script>
+<script src="./ReversePolishNotation.js"></script>
 <script>
     var editor;
     var shower;
@@ -361,19 +376,30 @@
             foldGutter: true,
             gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
             placeholder: '输入JSON数据...',
+            autoCloseTags: true,
+            matchTags: {bothTags: true},
+            matchBrackets: true,
             extraKeys: {
                 "Ctrl-G": function (cm) {
                     cm.foldCode(cm.getCursor(), null, "fold");
                 },
                 "Ctrl-Y": function (cm) {
                     cm.execCommand("foldAll");
-                }
+                },
+                "F11": function(cm) {
+                    cm.setOption("fullScreen", !cm.getOption("fullScreen"));
+                },
+                "Esc": function(cm) {
+                    if (cm.getOption("fullScreen")) cm.setOption("fullScreen", false);
+                },
+                "Ctrl-J": "toMatchingTag",
             }
         };
 
         // 初始化 CodeMirror
         editor = CodeMirror.fromTextArea(document.getElementById('codemirror-textarea'), codeMirrorConfig);
 
+        codeMirrorConfig.mode = 'text/javascript';
         shower = CodeMirror.fromTextArea(document.getElementById('outputData'), codeMirrorConfig);
 
         var cachedData = localStorage.getItem('codemirror-textarea');

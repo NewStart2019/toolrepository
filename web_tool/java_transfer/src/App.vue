@@ -1,11 +1,9 @@
 <template>
   <CodeEditor :lang="language"/>
-  <Test_Editor/>
 </template>
 
 <script setup lang="ts">
 import CodeEditor from "./components/CodeEditor.vue";
-import Test_Editor  from "./components/Test_Editor.vue";
 import {ref} from "vue";
 
 /** text */
