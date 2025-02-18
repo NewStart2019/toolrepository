@@ -770,7 +770,6 @@
      */
     function dealExpression(fArray) {
         let result = []
-        debugger
         if (fArray.length === 1) {
             if (isValidVariableNameOrChain(fArray[0])) {
                 return `formData.${fArray[0]}`;
@@ -897,9 +896,8 @@
                     //匹配变量名称
                     if (fArray[i] === "if") {
                         newFArray.push(fArray[i]);
-                        if (fArray[i + 1] !== "(") {
-                            newFArray.push("(");
-                        } else {
+                        newFArray.push("(");
+                        if (fArray[i + 1] === "(") {
                             i++;
                         }
                     } else if (keywords.includes(fArray[i])) {
@@ -1063,6 +1061,8 @@ if (${conditions}) {
             parsedData = JSON.parse(data);
             flag = true;
         } catch (e) {
+            console.log("JSON格式错误");
+            console.log(e);
         }
         if (flag) {
             let formula = parsedData.paramsFormula;
