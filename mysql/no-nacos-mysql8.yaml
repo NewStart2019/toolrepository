@@ -1,12 +1,15 @@
-version: '3.6'
+name: 'mysql8'
 services:
     db:
-        image: mysql
+        image: 172.16.0.197:8083/mysql:9.2.0-1.el9
         restart: always
         container_name: mysql8
+        network_mode: bridge
         environment:
+            MYSQL_ALLOW_EMPTY_PASSWORD: "no"
             MYSQL_ROOT_PASSWORD: R_qNhdi5vo
             TZ: Asia/Shanghai
+            bind-address: 0.0.0.0
         command:
           # 解决外部无法访问
             --default-authentication-plugin=caching_sha2_password
@@ -22,3 +25,4 @@ services:
             - /etc/localtime:/etc/localtime:ro
             - ./data:/var/lib/mysql
             - ./logs:/var/log
+            - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf
