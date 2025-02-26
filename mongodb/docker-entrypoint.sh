@@ -1,24 +1,36 @@
 #!/bin/bash
+# -e：当一个命令返回非零退出状态（即失败）时，立即退出整个脚本。这有助于快速定位错误，因为任何失败都会导致脚本停止执行。
+# -u 当尝试扩展一个未定义的变量时，将该行为视为错误并立即退出脚本
+# -o pipefail：这是一个选项，它改变了管道命令中如何处理返回状态的方式。默认情况下，管道命令的返回状态是最后一个命令的退出状态，
+# 即使前面的命令失败了也不会被注意到。使用 pipefail 选项后，如果管道中的任何一个命令失败了，整个管道的退出状态将是最后一个失败命令的退出状态
 set -Eeuo pipefail
 
+# ${1:0:1}字符串切片操作  获取第一个参数（$1）从索引 0 开始的 1 个字符
+# set -- mongod "$@" 这行命令用于重置位置参数. set -- 后面跟着的是新的位置参数列表
+# $@ 包括 $1, $2, ... 所有参数
 if [ "${1:0:1}" = '-' ]; then
 	set -- mongod "$@"
 fi
 
 originalArgOne="$1"
 
-# allow the container to be started with `--user`
-# all mongo* commands should be dropped to the correct user
+# [[ ]] 是 Bash 的关键字，提供更强大的条件测试功能, && 、 || 、 < 或 >; 对变量引用更加宽容。即使变量未定义或者为空，也不会导致语法错误
 if [[ "$originalArgOne" == mongo* ]] && [ "$(id -u)" = '0' ]; then
 	if [ "$originalArgOne" = 'mongod' ]; then
+    #	 执行 find 命令，查找 /data/configdb 和 /data/db 目录下不属于用户 mongodb 的所有文件和目录，并将其所有者更改为 mongodb。
 		find /data/configdb /data/db \! -user mongodb -exec chown mongodb '{}' +
 	fi
 
-	# make sure we can write to stdout and stderr as "mongodb"
+	# 使用 chown 命令尝试将标准输出（文件描述符 1）和标准错误（文件描述符 2）的所有权更改为 mongodb 用户
+  #	  --dereference 参数确保即使目标是一个符号链接，也会更改其指向的实际文件的所有权。
+  #   || : 表示即使 chown 命令失败（例如，由于权限问题），脚本也不会因此退出或报错
 	# (for our "initdb" code later; see "--logpath" below)
 	chown --dereference mongodb "/proc/$$/fd/1" "/proc/$$/fd/2" || :
 	# ignore errors thanks to https://github.com/docker-library/mongo/issues/149
 
+  # exec gosu mongodb ...：使用 gosu 工具以 mongodb 用户的身份重新执行当前脚本（"$BASH_SOURCE" 指向当前脚本的路径）和传递给它的所有参数（"$@"）。
+  #   gosu 是一个用于以指定用户身份运行程序的工具，常用于 Docker 容器中，以便正确地处理用户权限和环境隔离。
+  #   exec 命令替换当前 shell 进程为新的命令进程，这意味着一旦执行了这条命令，当前 shell 将被新的命令所取代，而不是创建一个新的子进程。
 	exec gosu mongodb "$BASH_SOURCE" "$@"
 fi
 
@@ -58,7 +70,13 @@ esac
 # you should use numactl to start your mongod instances, including the config servers, mongos instances, and any clients.
 # https://docs.mongodb.com/manual/administration/production-notes/#configuring-numa-on-linux
 if [[ "$originalArgOne" == mongo* ]]; then
+  # numactl 是一个用于控制进程与 NUMA（非统一内存访问）策略交互方式的工具。--interleave=all 参数告诉 numactl 使用轮询方式在所有可用的
+  #   NUMA 节点之间分配内存页面，这有助于提高性能特别是在多处理器或多节点内存架构上
 	numa='numactl --interleave=all'
+
+  #	$numa true 实际上会运行 numactl --interleave=all true，其中 true 是一个简单的命令，它总是成功退出。
+  #  &> /dev/null 将标准输出和标准错误都重定向到 /dev/null，这意味着无论命令成功还是失败，
+  #  检查 numactl 是否可用
 	if $numa true &> /dev/null; then
 		set -- $numa "$@"
 	fi
@@ -174,6 +192,8 @@ _js_escape() {
 	jq --null-input --arg 'str' "$1" '$str'
 }
 
+# : 是一个空命令（null command），它不做任何操作但可以用于执行参数扩展而不影响脚本的逻辑。
+# "${TMPDIR:=/tmp}"  TMPDIR 环境变量设置一个默认值
 : "${TMPDIR:=/tmp}"
 jsonConfigFile="$TMPDIR/docker-entrypoint-config.json"
 tempConfigFile="$TMPDIR/docker-entrypoint-temp-config.json"
