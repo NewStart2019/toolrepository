@@ -1,0 +1,15 @@
+name: kkfileview
+services:
+  kkfileview:
+    image: keking/kkfileview:4.1.0
+    container_name: kkfileview
+    restart: unless-stopped
+    network_mode: bridge
+    ports:
+      - 8012:8012
+    environment:
+      - KK_FILE_UPLOAD_ENABLED=true
+      - KK_OFFICE_PREVIEW_TYPE=pdf
+      - KK_OFFICE_PREVIEW_SWITCH_DISABLED=true
+
+# 说明： KK_FILE_UPLOAD_ENABLED 把首页的文件上传功能关闭了
