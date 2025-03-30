@@ -16,7 +16,7 @@
 </head>
 <body>
 <input type='text'
-       value='ws://127.0.0.1:8080/websocket/?token=eyJhbGciOiJIUzUxMiJ9.eyJsb2dpbl91c2VyX2tleSI6ImI5ODUzYTBiLTNmZGYtNDI4Ny04ZmIyLTRmOTc1NTIzMTA3OSJ9.VUqWSujwbF1ZrG7e9wXAGIZ7aPiY7WQRoxfvcGSNwpfLr6Ms6_16zmRFTe3EElQkMlX-ttDgvqz_IrAMewVXtQ'
+       value='ws://jc.jianyanceshi.com:6098/prod-api/chat?token=eyJhbGciOiJIUzUxMiJ9.eyJsb2dpbl91c2VyX2tleSI6ImI2YmQzYjJhLWJlZWYtNDdjMS1iNWExLWQ3ZGJhNGMwYzg1MSJ9.NV5QpF2rTWql4uneLFK88dTItifEe-YuF478lC3uQ3hWSCm2kZI6SNKrjy088kq31GpurpkAaSCgWXtR51iYUg'
        class="form-control" style='width:390px;display:inline'
        id='wsaddr'/>
 <div class="btn-group">
@@ -108,8 +108,7 @@
         var data = JSON.parse(evt.data)
         if (data.data === 'ping') {
             var pong = {
-                "code": "200",
-                "data": "pong"
+                "operatyType": "2"
             }
             websocket.send(JSON.stringify(pong));
         }
