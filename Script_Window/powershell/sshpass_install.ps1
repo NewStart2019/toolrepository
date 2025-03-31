@@ -12,10 +12,54 @@ $target_directory = "C:\Windows\System32"
 . "$PSScriptRoot\NetworkManage.ps1"
 
 # 测试是否是管理员
-function Test-Admin {
+function Test-Admin
+{
     $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
     return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+# 管理员权限打开此脚本
+function Get-Admin
+{
+    if (-not (Test-Admin))
+    {
+        Write-Host "当前未以管理员权限运行，正在尝试以管理员权限重新启动脚本..." -ForegroundColor Yellow
+
+        # 获取当前脚本的完整路径
+        # 获取当前脚本路径
+        $scriptPath = $PSCommandPath
+
+        # 获取传递给脚本的参数
+        $argsString = ""
+        if ($install)
+        {
+            $argsString += " -install "
+        }
+        if ($uninstall)
+        {
+            $argsString += " -uninstall "
+        }
+        Write-Host "$scriptPath $argsString"
+
+        # 使用 Start-Process 以管理员权限重新启动脚本，并传递参数
+        #  Start-Process 进程行为
+        #当使用 Start-Process 以管理员权限 (-Verb RunAs) 启动新进程时：
+        #原来的 PowerShell 进程不会等待新进程完成，而是会继续执行或直接退出（如果 exit 被调用）。
+        #新的进程是独立的，不会受原进程的生命周期影响，因此不会因为原进程退出而自动终止。
+        #如果需要传递参数，必须通过 -ArgumentList 明确传递。
+        #        Start-Process powershell.exe -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`" $scriptArgs"
+        if (Get-CommandExists pwsh)
+        {
+            Start-Process pwsh.exe -Verb RunAs -ArgumentList "-File `"$scriptPath`" $argsString"
+        }
+        else
+        {
+            Start-Process powershell.exe -Verb RunAs -ArgumentList "-File `"$scriptPath`" $argsString"
+        }
+        # 退出当前实例
+        exit
+    }
 }
 
 # 判断指定的命令是否存在，存在则返回true，不存在则返回false
@@ -65,35 +109,14 @@ function Write-ColoredText
 
 function install()
 {
-    Pause
     # 如果不是管理员权限，则重新以管理员权限启动脚本
-    if (-not (Test-Admin)) {
-        Write-Host "当前未以管理员权限运行，正在尝试以管理员权限重新启动脚本..." -ForegroundColor Yellow
-
-        # 获取当前脚本的完整路径
-        # 获取当前脚本路径
-        $scriptPath = $PSCommandPath
-
-        # 获取传递给脚本的参数
-        $scriptArgs = $MyInvocation.BoundParameters.GetEnumerator() | ForEach-Object { "-$($_.Key) `"$($_.Value)`"" }
-        $scriptArgs += $MyInvocation.UnboundArguments | ForEach-Object { "`"$_`"" }
-
-        # 使用 Start-Process 以管理员权限重新启动脚本，并传递参数
-        #  Start-Process 进程行为
-        #当使用 Start-Process 以管理员权限 (-Verb RunAs) 启动新进程时：
-        #原来的 PowerShell 进程不会等待新进程完成，而是会继续执行或直接退出（如果 exit 被调用）。
-        #新的进程是独立的，不会受原进程的生命周期影响，因此不会因为原进程退出而自动终止。
-        #如果需要传递参数，必须通过 -ArgumentList 明确传递。
-#        Start-Process powershell.exe -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`" $scriptArgs"
-        Start-Process powershell.exe -Verb RunAs -ArgumentList "-File `"$scriptPath`" $scriptArgs"
-        # 退出当前实例
-        exit 0
-    }
+    Get-Admin
 
     $temp = Get-CommandExists -commandName "sshpass"
     if ($temp)
     {
         Write-ColoredText -Text "sshpass命令已经安装。"
+        Pause
         Exit 0
     }
     else
@@ -109,7 +132,7 @@ function install()
     $temp = Test-NetworkConnectivity -Target $target_ip
     if ($temp)
     {
-        $download_url = "http://$($target_ip):84/sshpass/sshpass.exe"
+        $download_url = "http://$( $target_ip ):84/sshpass/sshpass.exe"
     }
     else
     {
@@ -144,6 +167,8 @@ function uninstall()
     $temp = Get-CommandExists -commandName "sshpass"
     if ($temp)
     {
+        # 如果不是管理员权限，则重新以管理员权限启动脚本
+        Get-Admin
         Remove-Item -Path "$target_directory\sshpass.exe" -Force
         Write-ColoredText -Text "sshpass已卸载。"
     }
@@ -162,5 +187,4 @@ else
 {
     install
 }
-
 Pause

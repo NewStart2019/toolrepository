@@ -1,0 +1,55 @@
+{
+  "Class": "Grade 10",
+  "Students": [
+    {
+      "Name": "Alice",
+      "Age": 16,
+      "Subjects": [
+        "Math",
+        "English",
+        "Physics"
+      ],
+      "Grades": {
+        "Math": 95,
+        "English": 88,
+        "Physics": 92
+      }
+    },
+    {
+      "Name": "Bob",
+      "Age": 17,
+      "Subjects": [
+        "Math",
+        "Chemistry"
+      ],
+      "Grades": {
+        "Math": 85,
+        "Chemistry": 90
+      }
+    },
+    {
+      "Subjects": [
+        "Math",
+        "Biology"
+      ],
+      "Name": "Charlie",
+      "Age": 16,
+      "Grades": {
+        "Math": 90,
+        "Biology": 85
+      }
+    },
+    {
+      "Subjects": [
+        "Math",
+        "Biology"
+      ],
+      "Name": "Charlie",
+      "Age": 16,
+      "Grades": {
+        "Math": 90,
+        "Biology": 85
+      }
+    }
+  ]
+}
