@@ -16,7 +16,8 @@ class Person {
     # 方法
     [string] GetInfo() {
         GetName
-        return "Name: $($this.Name), Age: $($this.Age)"
+        $test = "传递参数"
+        return "Name: $($this.Name), Age: $($this.Age) $test"
     }
 
     [Void] GetMessage(){
