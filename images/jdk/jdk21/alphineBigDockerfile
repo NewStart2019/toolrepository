@@ -52,6 +52,7 @@ RUN curl -o /usr/share/fonts/sjqy.ttf http://172.16.0.227:84/fonts/SJQY.TTF
 RUN curl -o /usr/share/fonts/sjqy1.ttf http://172.16.0.227:84/fonts/SJQY1.TTF
 RUN curl -o /usr/share/fonts/sjqy2.ttf http://172.16.0.227:84/fonts/SJQY2.TTF
 RUN curl -o /usr/share/fonts/sjqy3.ttf http://172.16.0.227:84/fonts/SJQY3.TTF
+RUN curl -o "/usr/share/fonts/wingdings 2.ttf" http://172.16.0.227:84/fonts/Wingdings%202.TTF
 
 RUN apk del curl
 # 删除缓存
