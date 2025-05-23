@@ -482,4 +482,7 @@ function Trace-Message
 Add-Path -Name "Path" -Append "C:\Extra\Tools" -Scope "Machine"
 Select-UniquePath -Path $Env:Path
 
+# 直接格式化输出环境变量
+$env:Path -split ';'
+
 Pause

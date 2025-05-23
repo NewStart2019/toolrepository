@@ -60,17 +60,17 @@
     local NVM_SOURCE_URL
     NVM_SOURCE_URL="$NVM_SOURCE"
     if [ "_$NVM_METHOD" = "_script-nvm-exec" ]; then
-      NVM_SOURCE_URL="http://172.16.0.97:84/nvm/nvm-exec"
+      NVM_SOURCE_URL="http://172.16.0.227:84/nvm/nvm-exec"
 #      NVM_SOURCE_URL="http://172.16.0.97:84/nvm/bash_completion/${NVM_GITHUB_REPO}/${NVM_VERSION}/nvm-exec"
     elif [ "_$NVM_METHOD" = "_script-nvm-bash-completion" ]; then
-      NVM_SOURCE_URL="http://172.16.0.97:84/nvm/bash_completion"
+      NVM_SOURCE_URL="http://172.16.0.227:84/nvm/bash_completion"
 #      NVM_SOURCE_URL="https://raw.githubusercontent.com/${NVM_GITHUB_REPO}/${NVM_VERSION}/bash_completion"
     elif [ -z "$NVM_SOURCE_URL" ]; then
       if [ "_$NVM_METHOD" = "_script" ]; then
-        NVM_SOURCE_URL="http://172.16.0.97:84/nvm/nvm.sh"
+        NVM_SOURCE_URL="http://172.16.0.227:84/nvm/nvm.sh"
 #        NVM_SOURCE_URL="https://raw.githubusercontent.com/${NVM_GITHUB_REPO}/${NVM_VERSION}/nvm.sh"
       elif [ "_$NVM_METHOD" = "_git" ] || [ -z "$NVM_METHOD" ]; then
-        NVM_SOURCE_URL="http://172.16.0.145:8929/tool/nvm.git"
+        NVM_SOURCE_URL="http://172.16.0.197:8929/tool/nvm.git"
       else
         nvm_echo >&2 "Unexpected value \"$NVM_METHOD\" for \$NVM_METHOD"
         return 1
@@ -463,7 +463,7 @@
   [ "_$NVM_ENV" = "_testing" ] || nvm_do_install
 
   source /root/.bashrc
-  nvm install 18.19.0
-  nvm use 18.19.0
+  nvm install 22.16.0
+  nvm use 22.16.0
 
 } # this ensures the entire script is downloaded #
