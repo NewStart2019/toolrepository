@@ -5,13 +5,19 @@ services:
       context: .
       dockerfile: Dockerfile
     image: 172.16.0.197:8083/tool/jdk21:1.4
+    env_file:
+      - .env
   alpine_jdk21:
     build:
       context: .
       dockerfile: alphineDockerfile
     image: 172.16.0.197:8083/tool/alpine-jdk21:1.0
+    env_file:
+      - .env
   alpine_jdk21_special:
     build:
       context: .
       dockerfile: alphineBigDockerfile
-    image: 172.16.0.197:8083/tool/alpine_jdk21_special-jdk21:1.3
+    image: 172.16.0.197:8083/tool/alpine_jdk21_special-jdk21:1.4
+    env_file:
+      - .env

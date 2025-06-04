@@ -1,0 +1,13 @@
+﻿name: 'iptables-web'
+services:
+  iptables-web:
+    image: pretty66/iptables-web:1.1.1
+    container_name: iptables-web
+    privileged: true
+    ports:
+      - 10001:10001
+    environment:
+      - IPT_WEB_USERNAME=admin
+      - IPT_WEB_PASSWORD=admin
+      - IPT_WEB_ADDRESS=:10001
+    network_mode: host
