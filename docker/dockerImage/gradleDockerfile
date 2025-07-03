@@ -14,8 +14,12 @@ RUN apk add sshpass
 # 创建目录
 RUN mkdir -p /root/.docker/
 RUN mkdir /root/.ssh && touch /root/.ssh/known_hosts
+COPY id_rsa /root/.ssh/id_rsa
+# Permissions 0755 for '/root/.ssh/id_rsa' are too open
+RUN chmod 700 ~/.ssh
+RUN chmod 600 /root/.ssh/id_rsa
+
 COPY config.json /root/.docker/config.json
 
-RUN apk add gradle
-
+RUN apk cache clean
 COPY dockerDelete.sh /app/
