@@ -1,6 +1,7 @@
 FROM docker:git
 LABEL org.opencontainers.image.authors="zqh"
 ARG VERSION=11
+ARG GRADLE_VERSION=7.6
 WORKDIR /app
 # 设置阿里云镜像仓库
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
@@ -21,5 +22,14 @@ RUN chmod 600 /root/.ssh/id_rsa
 
 COPY config.json /root/.docker/config.json
 
+RUN apk add --no-cache bash unzip wget && \
+    wget http://172.16.0.227:84/gradle/gradle-${GRADLE_VERSION}-bin.zip -O /tmp/gradle.zip && \
+    unzip /tmp/gradle.zip -d /opt && \
+    ln -s /opt/gradle-${GRADLE_VERSION} /opt/gradle && \
+    rm /tmp/gradle.zip
+
+ENV PATH="/opt/gradle/bin:${PATH}"
+
 RUN apk cache clean
 COPY dockerDelete.sh /app/
+RUN gradle --version

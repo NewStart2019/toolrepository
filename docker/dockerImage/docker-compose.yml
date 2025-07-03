@@ -46,4 +46,5 @@ services:
       network: host
       args:
         VERSION: 21
-    image: 172.16.0.197:8083/tool/docker/gradle-21:1.8
+        GRADLE_VERSION: 8.12.1
+    image: 172.16.0.197:8083/tool/docker/gradle-21:1.5
