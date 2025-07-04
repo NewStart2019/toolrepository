@@ -1,0 +1,20 @@
+﻿proxies:
+  - name: "local_Node"
+    type: ss
+    server: 111.10.246.42
+    port: 8388
+    cipher: aes-256-gcm
+    password: NKbVPPuhhy3VW38euHmYS3fRxzZ2EzFntjjBwVPGVHUH5ksYD6QV2KaZfaHDp3CrTpKaykUNNtbQw7ynJZMzSmUZPBBVZKnC7QMK
+
+proxy-groups:
+  - name: "Auto"
+    type: select
+    proxies:
+      - "local_Node"
+      - DIRECT
+
+rules:
+  - DOMAIN-SUFFIX,google.com,Auto
+  - DOMAIN-KEYWORD,youtube,Auto
+  - GEOIP,CN,DIRECT
+  - MATCH,Auto

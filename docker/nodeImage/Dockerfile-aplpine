@@ -1,0 +1,35 @@
+FROM alpine/git:v2.49.0
+
+LABEL org.opencontainers.image.authors="zqh"
+WORKDIR /app
+ARG NODE_VERSION=22.17.0
+
+# 设置阿里云镜像仓库
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+RUN apk update
+
+# 安装nvm
+COPY nvm_install.sh /app
+COPY nvm_version_change.sh /app
+RUN sh nvm_install.sh
+RUN export NVM_DIR="$HOME/.nvm" && \
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && \
+    nvm install $NODE_VERSION && \
+    node -v && \
+    npm -v
+RUN nvm --version
+RUN #source /app/nvm_version_change.sh $NODE_VERSION
+
+# 安装sshpass https://sourceforge.net/projects/sshpass/files/latest/download
+RUN apk add --upgrade sshpass
+
+RUN mkdir /root/.ssh && touch /root/.ssh/known_hosts
+COPY id_rsa /root/.ssh/id_rsa
+RUN apk add --upgrade dos2unix
+RUN dos2unix /root/.ssh/id_rsa
+RUN chmod 700 ~/.ssh
+RUN chmod 600 /root/.ssh/id_rsa
+
+RUN apk del  --no-cache dos2unix
+RUN apk cache clean
+RUN git --version && node --version

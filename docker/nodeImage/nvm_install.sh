@@ -394,7 +394,7 @@
 
     # shellcheck disable=SC2016
     COMPLETION_STR='[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion\n'
-    NPM_REGITRY='export NVM_NODEJS_ORG_MIRROR=https://npm.taobao.org/mirrors/node'
+    NPM_REGITRY='export NVM_NODEJS_ORG_MIRROR=https://registry.npmmirror.com/node'
     BASH_OR_ZSH=false
 
     if [ -z "${NVM_PROFILE-}" ]; then
@@ -461,9 +461,5 @@
   }
 
   [ "_$NVM_ENV" = "_testing" ] || nvm_do_install
-
-  source /root/.bashrc
-  nvm install 22.16.0
-  nvm use 22.16.0
 
 } # this ensures the entire script is downloaded #

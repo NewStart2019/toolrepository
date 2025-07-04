@@ -2,6 +2,8 @@
 export LC_ALL=C
 export LANG=en_US.UTF-8
 
+export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
 TARGET_VERSION=$1
 
 if [ -z "$TARGET_VERSION" ]; then
@@ -12,8 +14,6 @@ fi
 if [[ "${TARGET_VERSION:0:1}" != "v" ]]; then
   TARGET_VERSION="v"$TARGET_VERSION
 fi
-
-source $HOME/.bashrc
 
 # 获取 nvm ls 的输出
 NVM_OUTPUT=$(nvm ls)

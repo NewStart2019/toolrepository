@@ -1,0 +1,19 @@
+﻿name: shadowsocks
+services:
+  shadowsocks:
+    container_name: shadowsocks
+    image: 172.16.0.197:8083/tool/hadowsocks/shadowsocks-libev:latest
+    network_mode: bridge
+    restart: unless-stopped
+    ports:
+      - mode: ingress
+        target: 8388
+        published: 8388
+        protocol: tcp
+      - mode: ingress
+        target: 8388
+        published: 8388
+        protocol: udp
+    environment:
+      TZ: "Asia/Shanghai"
+      PASSWORD: "NKbVPPuhhy3VW38euHmYS3fRxzZ2EzFntjjBwVPGVHUH5ksYD6QV2KaZfaHDp3CrTpKaykUNNtbQw7ynJZMzSmUZPBBVZKnC7QMK"
