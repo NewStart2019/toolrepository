@@ -1,0 +1,168 @@
+stages:
+  # 下载依赖包、构建项目
+  #- build
+  # 代码检测
+  - check
+  # 准备：打包镜像，上传仓库,删除目标服务器；指定版本的容器、镜像
+  #- prepare
+  # 部署：传递docker-compose文件，构建容器
+  - run
+  - log
+  - registry
+
+sonarqube_check:
+  tags:
+    - default
+  stage: check
+  image: gradle:jdk17
+  when: manual
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+    GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - /app/sonarqube/cache
+  script: gradle sonar
+  allow_failure: true
+  only:
+    - merge_requests
+    - dev
+
+variables:
+  # 注意：请和build.gradle下面的docker.springBootApplication.images 名称一致，版本默认都是latest
+  # 容器映射的内外端口一致
+  MODULE_PROJECT_NANE: $CI_PROJECT_NAME
+  IMAGE_NAME: csatc/$MODULE_PROJECT_NANE
+  PROJECT_VERSION: 1.0.0
+  # 容器映射端口
+  PORT: 8001
+  PORT2: 8002
+  IMAGE_FULL_NAME: ${DOCKER_REPOSITORY}/$IMAGE_NAME:$PROJECT_VERSION
+  CONTAINER_NAME: $MODULE_PROJECT_NANE
+  CONTAINER_NAME2: ${$MODULE_PROJECT_NANE}2
+  # 目标服务器的项目路径
+  TARGET_SERVER: $DEV_IP
+  TARGET_SERVER2: $DEV_IP
+  PASSWORD2: $PASSWORD
+  ROOT_PATH: /app/$MODULE_PROJECT_NANE
+  PROFILES_ACTIVE: dev
+  IP_TYPE: inner
+.common-ssh-script-before: &common-ssh-script-before
+  - |
+    if [[ "${CI_COMMIT_REF_NAME}" == "master" || "${CI_COMMIT_REF_NAME}" == "main" ]]; then
+      if echo "$MASTER_PERMISSION" | grep -q "$GITLAB_USER_LOGIN"; then
+        echo "用户名 $GITLAB_USER_LOGIN 已添加到白名单中，可以进行正式环境发布";
+      else
+        echo "当前用户 $GITLAB_USER_LOGIN 没有权限发布正式环境！";
+        exit 1;
+      fi
+      export TARGET_SERVER=${PRO_IP};
+      export TARGET_SERVER2=${PRO_IP};
+      export PROFILES_ACTIVE="prod";
+      export PASSWORD=${PRO_PASS};
+      export PASSWORD2=${PRO_PASS};
+      export IP_TYPE=${PRO_IP_TYPE};
+      echo "当前正在部署正式系统${TARGET_SERVER}";
+    elif [ "${CI_COMMIT_REF_NAME}" = "test" ]; then
+      export TARGET_SERVER=${TEST_IP};
+      export PROFILES_ACTIVE="test";
+      export IP_TYPE=${TEST_IP_TYPE};
+      echo "当前正在部署测试系统${TARGET_SERVER}";
+    else
+      export IP_TYPE=${DEV_IP_TYPE};
+      echo "当前正在部署开发环境系统${TARGET_SERVER}";
+    fi
+  # 添加了远程服务器的SSH密钥 （必须生成文件，否则无法访问远程主机）
+  - ssh-keyscan -t rsa $TARGET_SERVER >> /root/.ssh/known_hosts
+
+# 执行对应的脚本
+deploy_run:
+  image: ${DOCKER_REPOSITORY}/tool/docker/gradle-21:1.5.3
+  tags:
+    - default
+  stage: run
+  variables:
+    GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
+    CACHE_KEY: $MODULE_PROJECT_NANE-repository
+  when: manual
+  before_script:
+    - *common-ssh-script-before
+    - git checkout -q $CI_COMMIT_SHA
+  script:
+    - |
+      PROJECT_VERSION=$(head -n 1 VERSION | xargs);
+      JAR_FILE=${MODULE_PROJECT_NANE}-$PROJECT_VERSION.jar;
+      export JAR_FILE=$JAR_FILE;
+    - gradle clean bootJar -x test -Pversion=$PROJECT_VERSION
+    - |
+      mv build/libs/*.jar ./bin/;
+      cd $(pwd)/bin;
+      docker-compose -f docker-compose.yml config > docker-compose-$CI_PROJECT_NAME.yml;
+      docker-compose -f docker-compose-$CI_PROJECT_NAME.yml build -q;
+      if [[ "${IP_TYPE}" == "inner" ]]; then
+        docker push $IMAGE_FULL_NAME -q
+      else
+        docker save -o ${MODULE_PROJECT_NANE}.tar $IMAGE_FULL_NAME;
+      fi
+    - sshpass -p $PASSWORD ssh $USER@$TARGET_SERVER "if [ ! -d "/app/$MODULE_PROJECT_NANE/" ]; then mkdir -p /app/$MODULE_PROJECT_NANE/; fi;"
+    - |
+      echo "开始上传镜像文件到目标服务器中……"
+      sshpass -p $PASSWORD scp -p docker-compose-$CI_PROJECT_NAME.yml $USER@$TARGET_SERVER:/app/$MODULE_PROJECT_NANE/;
+      if [[ "${IP_TYPE}" == "inner" ]]; then
+        sshpass -p $PASSWORD ssh $USER@$TARGET_SERVER "cd /app/$MODULE_PROJECT_NANE/;
+          docker-compose -f docker-compose-$CI_PROJECT_NAME.yml pull -q"
+      else
+        sshpass -p $PASSWORD scp -p ${MODULE_PROJECT_NANE}.tar $USER@$TARGET_SERVER:/app/$MODULE_PROJECT_NANE/;
+      fi
+    - |
+      echo "开始发布……"
+      if [[ "${IP_TYPE}" == "inner" ]]; then
+        commond="cd /app/$MODULE_PROJECT_NANE/;
+          docker-compose -f docker-compose-$CI_PROJECT_NAME.yml up -d emcp"
+        commond2="cd /app/$MODULE_PROJECT_NANE/;
+          docker-compose -f docker-compose-$CI_PROJECT_NAME.yml up -d emcp2"
+      else
+        commond="cd /app/$MODULE_PROJECT_NANE/;
+          docker load -i ${MODULE_PROJECT_NANE}.tar;
+          docker-compose -f docker-compose-$CI_PROJECT_NAME.yml up -d emcp"
+        commond2="cd /app/$MODULE_PROJECT_NANE/;"
+        # 判断 $TARGET_SERVER 和 $TARGET_SERVER2 变量字符串不相等
+        if [ $TARGET_SERVER != $TARGET_SERVER2 ]; then
+          commond2+="docker load -i ${MODULE_PROJECT_NANE}.tar;"
+        fi
+        commond2+="docker-compose -f docker-compose-$CI_PROJECT_NAME.yml up -d emcp2"
+      fi
+      sshpass -p $PASSWORD ssh $USER@$TARGET_SERVER 'bash -s' < /app/dockerDelete.sh container $CONTAINER_NAME $PROJECT_VERSION
+      sshpass -p $PASSWORD ssh $USER@$TARGET_SERVER "${commond}"
+      sleep $wait_time
+      # 启动第二个服务
+      sshpass -p $PASSWORD2 ssh $USER@$TARGET_SERVER2 'bash -s' < /app/dockerDelete.sh container $CONTAINER_NAME2 $PROJECT_VERSION
+      sshpass -p $PASSWORD2 ssh $USER@$TARGET_SERVER2 "${commond2}"
+    - echo "发布成功，后续清理多余的镜像……"
+    - sshpass -p $PASSWORD ssh $USER@$TARGET_SERVER "docker image prune -a -f"
+    - echo "日志查看地址：http://$TARGET_SERVER:1000/$CONTAINER_NAME"
+    - sh /app/dockerDelete.sh images ${DOCKER_REPOSITORY}/$IMAGE_NAME $PROJECT_VERSION
+  cache:
+    key: $CACHE_KEY
+    paths:
+      - .gradle/
+      - build/
+
+deploy_log:
+  tags:
+    - default
+  stage: log
+  when: manual
+  variables:
+    GIT_STRATEGY: none
+    CI_JOB_MAX_LOG_SIZE: "100m"  # 设置日志大小限制为10M字节
+    CI_JOB_TRACE_MAX_SIZE: "100m"  # 将日志大小限制为100M
+    startTime: $(date -d "1 hour ago" +"%Y-%m-%dT%H:%M:%S")
+    endTime: $(date +"%Y-%m-%dT%H:%M:%S")
+  before_script:
+    - *common-ssh-script-before
+  script:
+    - echo "默认获取最近一个小时的$CONTAINER_NAME容器日志……"
+    - sshpass -p $PASSWORD ssh $USER@$TARGET_SERVER "a=\$(sudo docker ps | grep $CONTAINER_NAME | awk '{print \$NF}') ;
+      sudo docker logs --since=$startTime --until=$endTime \$a"

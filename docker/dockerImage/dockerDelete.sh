@@ -47,6 +47,7 @@ delete_images() {
 # 删除指定容器名称的 容器
 delete_container(){
   # 判断容器是否存在存在则移除
+  NAME="${NAME}-${VERSION}"
   if [ "$(docker ps -a | grep ${NAME} | awk '{print $3}')" != "" ]; then
     docker stop $(docker ps -a | grep ${NAME} | awk '{print $NF}')
     docker rm $(docker ps -a | grep ${NAME} | awk '{print $NF}') -f
