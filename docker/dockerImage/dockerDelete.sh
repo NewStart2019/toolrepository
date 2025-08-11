@@ -23,18 +23,17 @@ fi
 
 # 删除非当前版本的镜像: 根据镜像名称:版本删除
 delete_images() {
-  local current_image="${NAME}:${VERSION}"
-  local repository="${NAME}"
+  repository="${NAME}"
 
   # 获取所有与 repository 匹配的镜像列表
-  local images=$(docker images | grep "${repository} " | awk '{print $0}')
+  images=$(docker images | grep "${repository} " | awk '{print $0}')
 
   # 使用 echo 和管道传递字符串给循环
   echo "$images" | while read -r image; do
-    local image_tag=$(echo "$image" | awk '{print $2}')
-    local image_id=$(echo "$image" | awk '{print $3}')
+    image_tag=$(echo "$image" | awk '{print $2}')
+    image_id=$(echo "$image" | awk '{print $3}')
     if [ "${image_tag}" != "${VERSION}" ]; then
-      if [ "${image_tag}" == "<none>" ]; then
+      if [ "${image_tag}" = "<none>" ]; then
         docker rmi $image_id
       else
         # 非当前版本的镜像，删除之

@@ -1,0 +1,17 @@
+﻿name: 'rustfs'
+services:
+  rustfs:
+      image: rustfs/rustfs
+      restart: unless-stopped
+      container_name: rustfs
+      network_mode: bridge
+      ports:
+        - 9000:9000
+      environment:
+        RUSTFS_ACCESS_KEY: rustfsadmin
+        RUSTFS_SECRET_KEY: rustfsadmin
+        TZ: Asia/Shanghai
+      volumes:
+          - ./data:/data
+
+#  完整操作：https://mp.weixin.qq.com/s/cQDMxPNHpduF7QijH_tT7Q
