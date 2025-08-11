@@ -1,0 +1,12 @@
+[mysqld]
+server-id=1
+log-bin=mysql-bin
+# 行模式，适合复制
+binlog_format=row
+
+# 开启 GTID
+gtid_mode=ON
+# 保证事务一致性
+enforce_gtid_consistency=ON
+#  让从库写 relay log 时也记录 GTID
+log_slave_updates=ON

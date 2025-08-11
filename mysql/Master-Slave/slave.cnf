@@ -1,0 +1,16 @@
+[mysqld]
+port=3308
+server-id=2
+relay-log=relay-bin
+read_only=1
+
+# 开启 GTID 复制
+# gtid_mode=ON
+# enforce_gtid_consistency=ON
+
+# 开启多线程复制
+# replica_parallel_type=LOGICAL_CLOCK
+# replica_parallel_workers=4
+
+# 可选优化
+# replica_preserve_commit_order=ON

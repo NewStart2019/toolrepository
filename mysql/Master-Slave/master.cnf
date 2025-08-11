@@ -1,0 +1,11 @@
+[mysqld]
+port=3306
+server-id=1
+log-bin=mysql-bin
+# 行模式，适合复制
+binlog_format=row
+binlog_expire_logs_seconds=604800
+
+# 开启 GTID 复制
+# gtid_mode=ON
+# enforce_gtid_consistency=ON

@@ -1,0 +1,51 @@
+﻿name: 'mysql-master-slave'
+services:
+  mysql-master:
+    image: mysql:9.4.0
+    restart: always
+    container_name: mysql9_msater
+    network_mode: bridge
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "no"
+      MYSQL_ROOT_PASSWORD: R_qNhdi5vo
+      TZ: Asia/Shanghai
+      bind-address: 0.0.0.0
+    command:
+      # 允许 caching_sha2_password 插件允许非加密连接
+      --server-id=1
+      --caching_sha2_password_auto_generate_rsa_keys=0
+      --explicit_defaults_for_timestamp=true
+      --lower_case_table_names=1
+      --secure_file_priv=/var/lib/mysql
+      --sql-mode="STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO"
+    ports:
+      - 3307:3306
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./master_data:/var/lib/mysql
+      - ./master_logs:/var/log
+      - ./master-gtid.cnf:/etc/mysql/conf.d/master-gtid.cnf
+
+  mysql-slave:
+    image: mysql:9.4.0
+    restart: always
+    container_name: mysql9_slave
+    network_mode: bridge
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "no"
+      MYSQL_ROOT_PASSWORD: R_qNhdi5vo
+      TZ: Asia/Shanghai
+      bind-address: 0.0.0.0
+    command:
+      --server-id=2
+      --explicit_defaults_for_timestamp=true
+      --lower_case_table_names=1
+      --secure_file_priv=/var/lib/mysql
+      --sql-mode="STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO"
+    ports:
+      - 3309:3308
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./slave_data:/var/lib/mysql
+      - ./slave_log:/var/log
+      - ./slave-gtid.cnf:/etc/mysql/conf.d/slave-gtid.cnf
