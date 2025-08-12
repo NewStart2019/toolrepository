@@ -1,5 +1,6 @@
 [mysqld]
 server-id=1
+# 开启并指定 binlog 文件前缀
 log-bin=mysql-bin
 # 行模式，适合复制
 binlog_format=row
