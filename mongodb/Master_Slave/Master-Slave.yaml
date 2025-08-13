@@ -1,0 +1,58 @@
+name: 'mongo-replset'
+services:
+  mongo-primary:
+    image: mongo:8.0.13-rc2
+    container_name: mongo-primary
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    network_mode: bridge
+    environment:
+      TZ: "Asia/Shanghai"
+    volumes:
+      - ./data/primary:/data/db
+      - ./keyFile.pem:/data/mongodb/keyFile.pem
+      - ./log/primary:/var/log/mongodb
+      # 数据目录为空时执行一次
+      - ./init/replica-init.js:/docker-entrypoint-initdb.d/init-replica.js:ro
+    command: >
+      sh -c "chmod 600 /data/mongodb/keyFile.pem &&
+             mongod --replSet rs0 --bind_ip_all --logpath /var/log/mongodb/mongod.log --logappend
+                    --clusterAuthMode keyFile
+                    --keyFile /data/mongodb/keyFile.pem"
+
+  mongo-secondary:
+    image: mongo:8.0.13-rc2
+    container_name: mongo-secondary
+    restart: unless-stopped
+    ports:
+      - "27018:27017"
+    network_mode: bridge
+    environment:
+      TZ: "Asia/Shanghai"
+    volumes:
+      - ./data/secondary:/data/db
+      - ./keyFile.pem:/data/mongodb/keyFile.pem
+      - ./log/secondary:/var/log/mongodb
+    command: >
+      sh -c "chmod 600 /data/mongodb/keyFile.pem &&
+             mongod --replSet rs0 --bind_ip_all --logpath /var/log/mongodb/mongod.log --logappend
+                    --clusterAuthMode keyFile
+                    --keyFile /data/mongodb/keyFile.pem"
+
+
+  mongo-arbiter:
+    image: mongo:8.0.13-rc2
+    container_name: mongo-arbiter
+    restart: unless-stopped
+    network_mode: bridge
+    ports:
+      - "27019:27017"
+    volumes:
+      - ./keyFile.pem:/data/mongodb/keyFile.pem
+      - ./log/arbiter:/var/log/mongodb
+    command: >
+      sh -c "chmod 600 /data/mongodb/keyFile.pem &&
+             mongod --replSet rs0 --bind_ip_all --logpath /var/log/mongodb/mongod.log --logappend
+                    --clusterAuthMode keyFile
+                    --keyFile /data/mongodb/keyFile.pem"

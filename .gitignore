@@ -45,3 +45,5 @@ docker/dockerImage/id_rsa.pub
 docker/dockerImage/id_rsa
 
 bind
+mongodb/Master_Slave/data
+mongodb/Master_Slave/log
