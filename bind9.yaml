@@ -1,0 +1,15 @@
+name: "bind"
+services:
+  bind9:
+    image: ubuntu/bind9:9.18-22.04_beta
+    container_name: bind9
+    ports:
+      - "30053:53"
+      - "30053:53/udp"
+    environment:
+      TZ: "Asia/Shanghai"
+      BIND9_USER: "bind"
+    volumes:
+      - ./bind/cached/data:/var/cache/bind
+
+#docker run -d --name bind9-container -e TZ=UTC -p 30053:53 -p 30053:53/udp ubuntu/bind9:9.18-22.04_beta

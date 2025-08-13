@@ -39,3 +39,9 @@ out/
 /logs/
 bin/jtjc/*.exe
 bin/jcgl/*.exe
+
+
+docker/dockerImage/id_rsa.pub
+docker/dockerImage/id_rsa
+
+bind
