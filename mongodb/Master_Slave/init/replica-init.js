@@ -40,9 +40,9 @@ waitForMembers(members, 120);
 rs.initiate({
   _id: "rs0",
   members: [
-    { _id: 0, host: members[0], priority: 2 },
-    { _id: 1, host: members[1], priority: 0 },
-    { _id: 2, host: members[2], arbiterOnly: true }
+    { _id: 0, host: members[0], priority: 2 , votes : 1},
+    { _id: 1, host: members[1], priority: 0 , votes : 1},
+    { _id: 2, host: members[2], arbiterOnly: true, votes: 1 }
   ]
 });
 
@@ -52,7 +52,7 @@ sleep(5000);
 use admin;
 db.adminCommand({
   setDefaultRWConcern: 1,
-  defaultWriteConcern: { w: "majority" }
+  defaultWriteConcern: { w: 1, j: true }
 });
 
 // 创建 root 用户
