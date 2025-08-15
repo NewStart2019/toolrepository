@@ -64,3 +64,16 @@ db.createUser({
 
 print("🎉 Replica set initialized successfully!");
 rs.status();
+
+
+// 强制重新初始化
+rs.initiate(
+  {
+    _id: "rs0",
+    members: [
+      { _id: 0, host: '172.16.0.170:27017', priority: 2 , votes : 1},
+      { _id: 1, host: '172.16.0.170:27018', priority: 0 , votes : 0}
+    ]
+  },
+  { force: true }
+)

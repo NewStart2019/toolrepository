@@ -1,26 +1,47 @@
-version: "3.8"
-
+name: 'mongodb'
 services:
   mongodb:
-    image: mongo
+    image: 172.16.0.197:8083/mongo:8.0.13-rc2
     container_name: mongodb
     restart: unless-stopped
-    command:
-      - /bin/sh
-      - -c
-      - |
-        chmod 400 /data/mongodb/keyFile.pem
-        chown 999:999 /data/mongodb/keyFile.pem
-        mongod --replSet rs0 --bind_ip_all --clusterAuthMode keyFile --keyFile /data/mongodb/keyFile.pem --auth
+    network_mode: bridge
     ports:
-      - "27017:27017"
+      - "27018:27017"
     environment:
       TZ: "Asia/Shanghai"
     volumes:
-      - ./db:/data/db
-      # 自定义数据备份目录，可以定时全量备份数据出来
-      - ./mybackup:/mybackup
-      - ./keyFile.pem:/data/mongodb/keyFile.pem
+      - ./data:/data/db
+      - ./log/primary:/var/log/mongodb
+    command: /bin/sh -c "
+      mkdir -p /data/mongodb &&
+      echo 'fXhGqBe5QOH/KnPH+6A2Pn5561NBBZsRR+jc+5ZlF5LoHw4hM2FMqmGu4xNumWZt
+      buSBzaEI+rWmorelNwFXjgYv9sl2bVHNnDBU3wFM6aDnpLm5nTe/sXxTpXONMl2G
+      71+ewEl35KVwmafoLQ+flklCXe8b0oftISDmryJ9DE+FLjNAPHgRv5E23pPsmT6+
+      s39vwM938hLhDXYi6rqsHd5YTf2zjRiGeRevxsRTh9La6F9ZqcSA7q1TbZULYeoG
+      3JX6cDh9tGoH+wYXD0sYxpyHgwOprHlLPg2dzpeEotnJgThX3KIHUMEqZoHvqMmt
+      DgORQu9OJWGQ4Aa9TI4QdFEESSzqF12EG3eHTqBW0AP/POyVLEySNvEbd3hgbdxy
+      1bGt7f6qKa149VjyMDwSIG8tX+XBLwhO/HpWV6mTLbmJaeNxSr0j0teddbhyu18s
+      3XmndgIRZmQ6fUTJV9TZuQwS/HPf5H5Sm3tqY5ElX5+0s+ZStZQM34xiDdk8VlYX
+      37vphLEJ57sLqXXg+JSuWe3HU96P555QnQNEECcK86f9abIZG8lvjE5kr7NUzXnK
+      bAr2061e1OG5TtOwCP/pS7o/dSD4WrC0L6kAAtw++B2Ayqh5eGFYmQvfkrDnwpv1
+      0W0Ob/fvjIyilF0ugMAVCPbenQLprSfDDLA+2aZzSr96AcW0VwLhFjBWJiehyp3N
+      e713zP7SHEbpD0GnTy2Z3onqNxqscwMmY+Oc1zJfs5rvDkFZDS1TcQJmPGctRpFr
+      4TUCQqN+SIyVRHATPtPHllwKkymuGVBraOmhhflEkzpKh47oXWEdA4luaBVmSd2X
+      S2ZXWsPtB369Jrx48ibGq0gxF9r65k7NqB12Pz5nc1Cope0rF4+DPJ/PCh913rh0
+      PRJESmqIcO7WRp19+/RW1O98pjHDqdmVsbgdOlSK5P/x/zqKqRKGwXaiiIsI4RDg
+      hLaa1mmXQVwxSL8JGaCZwWBmzyGvhIlb2qRTWJdLU+R8m8u0
+      ' > /data/mongodb/keyFile.pem &&
+      chmod 600 /data/mongodb/keyFile.pem &&
+      chown mongodb:mongodb /data/mongodb/keyFile.pem &&
+      mongod \
+      --replSet rs0 \
+      --bind_ip_all \
+      --clusterAuthMode keyFile \
+      --keyFile /data/mongodb/keyFile.pem \
+      --logpath /var/log/mongodb/mongod.log \
+      --logappend \
+      --auth
+      "
 
 # 1、准备keyFile
 # 测试在4.x版本不需要使用keyFile,但是≥5.x版本是必须要KeyFile的，不然会报 “BadValue: security.keyFile is required when authorization is enabled with replica sets”
