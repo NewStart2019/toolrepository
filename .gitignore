@@ -49,3 +49,8 @@ mongodb/Master_Slave/data
 mongodb/Master_Slave/log
 db/
 log/
+
+LibreOffice/customize
+LibreOffice/data
+LibreOffice/onlyoffice-conf
+LibreOffice/onlyoffice-dist
