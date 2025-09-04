@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# 用法
+# 服务器上定时器: crontab -e
+#           1 0  * * * /bin/bash /app/mysql/batchBack.sh >> /app/mysql/backup/run.log 2>&1
 back_database=("stc_fjjc" "stc-auth" "stc-iot" "stc-jcgl" "stc-jtjc")
 
 # 遍历方式一：
