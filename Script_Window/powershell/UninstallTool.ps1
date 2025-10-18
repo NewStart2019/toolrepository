@@ -135,8 +135,8 @@ $softwareGrid.Columns.AddRange(
         HeaderText = "版本";
         DataPropertyName = "DisplayVersion";
         SortMode = "Automatic";
-        MinimumWidth = 80;
-        FillWeight = 8
+        MinimumWidth = 50;
+        FillWeight = 4
     }),
     (New-Object System.Windows.Forms.DataGridViewTextBoxColumn -Property @{
         HeaderText = "发布者";
@@ -206,6 +206,8 @@ function Load-SoftwareData
                         InstallLocation = if (-not [string]::IsNullOrEmpty($item.InstallLocation))
                         {
                             $item.InstallLocation
+                        } elseif (-not [string]::IsNullOrEmpty($item.installDir)) {
+                            $item.installDir
                         }
                         else
                         {
@@ -242,7 +244,9 @@ function Filter-Software
     if ($FilteredSoftware.Count -gt 0)
     {
         # 添加列
-        $properties = $FilteredSoftware[0] | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name
+        # 显示的列
+        $properties = @("DisplayName", "DisplayVersion", "Publisher", "InstallLocation", "UninstallString", "RegistryPath")
+#        $properties = $FilteredSoftware[0] | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name
         foreach ($prop in $properties)
         {
             $dataTable.Columns.Add($prop) | Out-Null
@@ -260,7 +264,7 @@ function Filter-Software
     }
 
     # 绑定DataTable到表格
-#    $softwareGrid.DataSource = $null  # 清空旧数据
+    #    $softwareGrid.DataSource = $null  # 清空旧数据
     $softwareGrid.DataSource = $dataTable
     $softwareGrid.AutoResizeColumns()
     $statusLabel.Text = "显示 $( $FilteredSoftware.Count ) 个软件 (共 $( $AllSoftware.Count ) 个)"
@@ -382,6 +386,100 @@ function Apply-Theme
     }
 }
 
+function Show-SoftwareDetailAndUninstall
+{
+    param($software)
+    # 创建详情弹窗
+    $detailForm = New-Object System.Windows.Forms.Form
+    $detailForm.Text = "软件详情 - 确认卸载"
+    $detailForm.Size = New-Object System.Drawing.Size(500, 400)
+    $detailForm.StartPosition = "CenterScreen"
+    $detailForm.Font = New-Object System.Drawing.Font("Segoe UI", 9)
+    $detailForm.FormBorderStyle = "FixedDialog"
+    $detailForm.MaximizeBox = $false
+    $detailForm.MinimizeBox = $false
+
+    # 创建文本框用于展示详情（不可编辑）
+    $detailTextBox = New-Object System.Windows.Forms.TextBox
+    $detailTextBox.Dock = "Fill"
+    $detailTextBox.ReadOnly = $true
+    $detailTextBox.Multiline = $true
+    $detailTextBox.ScrollBars = "Vertical"
+    $detailTextBox.WordWrap = $true
+    # 拼接软件详情信息
+    $detailText = @"
+软件名称: $( $software.DisplayName )
+版本: $( $software.DisplayVersion )
+发布者: $( $software.Publisher )
+安装路径: $( $software.InstallLocation )
+注册表位置: $( $software.RegistryPath )
+
+提示: 点击"确认卸载"将开始移除该软件，若勾选了"清理残留目录"，会同时删除安装文件夹。
+"@
+    $detailTextBox.Text = $detailText
+
+    # 创建按钮面板
+    $btnPanel = New-Object System.Windows.Forms.Panel
+    $btnPanel.Dock = "Bottom"
+    $btnPanel.Height = 40
+    $btnPanel.Padding = New-Object System.Windows.Forms.Padding(10, 5, 10, 5)
+
+    # 确认卸载按钮
+    $confirmBtn = New-Object System.Windows.Forms.Button
+    $confirmBtn.Text = "确认卸载"
+    $confirmBtn.Size = New-Object System.Drawing.Size(100, 30)
+    $confirmBtn.Location = New-Object System.Drawing.Point(280, 5)
+    $confirmBtn.BackColor = [System.Drawing.Color]::FromArgb(231, 76, 60)
+    $confirmBtn.ForeColor = [System.Drawing.Color]::White
+    $confirmBtn.Add_Click({
+        # 关闭详情弹窗，执行卸载
+        $detailForm.Close()
+        Uninstall-Software $software
+        Load-SoftwareData  # 重新加载软件列表，刷新界面
+    })
+
+    # 取消按钮
+    $cancelBtn = New-Object System.Windows.Forms.Button
+    $cancelBtn.Text = "取消"
+    $cancelBtn.Size = New-Object System.Drawing.Size(100, 30)
+    $cancelBtn.Location = New-Object System.Drawing.Point(170, 5)
+    $cancelBtn.Add_Click({ $detailForm.Close() })
+
+    # 添加控件到弹窗
+    $btnPanel.Controls.AddRange(@($confirmBtn, $cancelBtn))
+    $detailForm.Controls.AddRange(@($detailTextBox, $btnPanel))
+
+    # 显示弹窗（阻塞模式，直到用户操作）
+    $detailForm.ShowDialog() | Out-Null
+}
+
+function Open-SoftwareRegistry
+{
+    param($RegistryPath)
+    try
+    {
+        # 验证注册表路径是否有效
+        if ([string]::IsNullOrEmpty($RegistryPath) -or (-not (Test-Path $RegistryPath)))
+        {
+            [System.Windows.Forms.MessageBox]::Show("该软件的注册表路径无效或不存在`n路径: $RegistryPath", "提示", "OK", "Information")
+            return
+        }
+
+        # 转换路径格式：regedit需要“计算机\”前缀（PowerShell的Registry路径默认不带）
+        $regEditPath = "计算机\$RegistryPath"
+        # 启动regedit并定位到指定路径（/e 参数用于导出，/s 用于静默，这里用 /select 直接定位）
+        Start-Process -FilePath "regedit.exe" -ArgumentList "/select, `"$regEditPath`"" -ErrorAction Stop
+
+        $statusLabel.Text = "已打开注册表位置: $RegistryPath"
+    }
+    catch
+    {
+        $errorMsg = "打开注册表失败: $( $_.Exception.Message )"
+        $statusLabel.Text = $errorMsg
+        [System.Windows.Forms.MessageBox]::Show($errorMsg, "错误", "OK", "Error")
+    }
+}
+
 # -----------------------------
 # 5. 绑定事件
 # -----------------------------
@@ -420,11 +518,37 @@ $uninstallMenuItem.Text = "卸载此软件"
 $uninstallMenuItem.Add_Click({
     if ($softwareGrid.SelectedRows.Count -gt 0)
     {
-        Uninstall-Software $softwareGrid.SelectedRows[0].DataBoundItem
-        Load-SoftwareData
+        # 获取当前选中行的软件数据，调用详情弹窗函数
+        $selectedSoftware = $softwareGrid.SelectedRows[0].DataBoundItem
+        Show-SoftwareDetailAndUninstall $selectedSoftware
     }
 })
+
+#$uninstallMenuItem.Add_Click({
+#    if ($softwareGrid.SelectedRows.Count -gt 0)
+#    {
+#        Uninstall-Software $softwareGrid.SelectedRows[0].DataBoundItem
+#        Load-SoftwareData
+#    }
+#})
 $contextMenu.Items.Add($uninstallMenuItem)
+
+# 新增：打开注册表位置菜单项
+$openRegMenuItem = New-Object System.Windows.Forms.ToolStripMenuItem
+$openRegMenuItem.Text = "打开注册表位置"
+# 绑定点击事件
+$openRegMenuItem.Add_Click({
+    if ($softwareGrid.SelectedRows.Count -gt 0)
+    {
+        # 获取当前选中行的软件注册表路径
+        $selectedSoftware = $softwareGrid.SelectedRows[0].DataBoundItem
+        Open-SoftwareRegistry -RegistryPath $selectedSoftware.RegistryPath
+    }
+})
+# 将菜单项添加到右键菜单（可调整顺序，这里放在“卸载”之后）
+$contextMenu.Items.Add($openRegMenuItem)
+
+
 $softwareGrid.ContextMenuStrip = $contextMenu
 
 # -----------------------------
