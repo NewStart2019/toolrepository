@@ -145,7 +145,7 @@ $row2.Height = 50
 $mainGrid.RowDefinitions.Add($row2)  # 功能切换栏
 
 $row3 = New-Object System.Windows.Controls.RowDefinition
-$row3.Height = 180
+$row3.Height = 200
 $mainGrid.RowDefinitions.Add($row3)  # 查询条件栏
 
 $row4 = New-Object System.Windows.Controls.RowDefinition
@@ -209,6 +209,8 @@ $filterGrid.ColumnDefinitions.Add((New-Object System.Windows.Controls.ColumnDefi
 $filterGrid.ColumnDefinitions.Add((New-Object System.Windows.Controls.ColumnDefinition))
 $filterGrid.ColumnDefinitions.Add((New-Object System.Windows.Controls.ColumnDefinition))
 $filterGrid.ColumnDefinitions.Add((New-Object System.Windows.Controls.ColumnDefinition))
+$filterGrid.ColumnDefinitions.Add((New-Object System.Windows.Controls.ColumnDefinition))
+$filterGrid.ColumnDefinitions.Add((New-Object System.Windows.Controls.ColumnDefinition))
 
 $filterGrid.RowDefinitions.Add((New-Object System.Windows.Controls.RowDefinition))
 $filterGrid.RowDefinitions.Add((New-Object System.Windows.Controls.RowDefinition))
@@ -223,8 +225,9 @@ $searchLabel.Style = $window.Resources["LabelStyle"]
 [System.Windows.Controls.Grid]::SetColumn($searchLabel, 0)
 $filterGrid.Children.Add($searchLabel)
 
+$inputLength = 200
 $searchBox = New-Object System.Windows.Controls.TextBox
-$searchBox.Width = 200
+$searchBox.Width = $inputLength
 $searchBox.Style = $window.Resources["InputStyle"]
 $searchBox.ToolTip = "输入文件名进行搜索..."
 [System.Windows.Controls.Grid]::SetRow($searchBox, 0)
@@ -240,7 +243,7 @@ $startLabel.Style = $window.Resources["LabelStyle"]
 $filterGrid.Children.Add($startLabel)
 
 $startDateTimeBox = New-Object System.Windows.Controls.TextBox
-$startDateTimeBox.Width = 180
+$startDateTimeBox.Width = $inputLength
 $startDateTimeBox.Style = $window.Resources["InputStyle"]
 $startDateTimeBox.ToolTip = "格式: yyyy-MM-dd HH:mm:ss"
 $startDateTimeBox.Text = (Get-Date).AddDays(-30).ToString("yyyy-MM-dd HH:mm:ss")
@@ -253,16 +256,16 @@ $endLabel = New-Object System.Windows.Controls.Label
 $endLabel.Content = "结束时间:"
 $endLabel.Style = $window.Resources["LabelStyle"]
 [System.Windows.Controls.Grid]::SetRow($endLabel, 1)
-[System.Windows.Controls.Grid]::SetColumn($endLabel, 2)
+[System.Windows.Controls.Grid]::SetColumn($endLabel, 3)
 $filterGrid.Children.Add($endLabel)
 
 $endDateTimeBox = New-Object System.Windows.Controls.TextBox
-$endDateTimeBox.Width = 180
+$endDateTimeBox.Width = $inputLength
 $endDateTimeBox.Style = $window.Resources["InputStyle"]
 $endDateTimeBox.ToolTip = "格式: yyyy-MM-dd HH:mm:ss"
 $endDateTimeBox.Text = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
 [System.Windows.Controls.Grid]::SetRow($endDateTimeBox, 1)
-[System.Windows.Controls.Grid]::SetColumn($endDateTimeBox, 3)
+[System.Windows.Controls.Grid]::SetColumn($endDateTimeBox, 4)
 $filterGrid.Children.Add($endDateTimeBox)
 
 # 最小大小
@@ -274,7 +277,7 @@ $minSizeLabel.Style = $window.Resources["LabelStyle"]
 $filterGrid.Children.Add($minSizeLabel)
 
 $minSizeBox = New-Object System.Windows.Controls.TextBox
-$minSizeBox.Width = 60
+$minSizeBox.Width = $inputLength
 $minSizeBox.Style = $window.Resources["InputStyle"]
 $minSizeBox.ToolTip = "输入最小文件大小"
 [System.Windows.Controls.Grid]::SetRow($minSizeBox, 2)
@@ -290,7 +293,7 @@ $minSizeUnit.Items.Add("MB")
 $minSizeUnit.Items.Add("GB")
 $minSizeUnit.SelectedItem = "KB"
 [System.Windows.Controls.Grid]::SetRow($minSizeUnit, 2)
-[System.Windows.Controls.Grid]::SetColumn($minSizeUnit, 1)
+[System.Windows.Controls.Grid]::SetColumn($minSizeUnit, 2)
 $filterGrid.Children.Add($minSizeUnit)
 
 # 最大大小
@@ -298,15 +301,15 @@ $maxSizeLabel = New-Object System.Windows.Controls.Label
 $maxSizeLabel.Content = "最大大小:"
 $maxSizeLabel.Style = $window.Resources["LabelStyle"]
 [System.Windows.Controls.Grid]::SetRow($maxSizeLabel, 2)
-[System.Windows.Controls.Grid]::SetColumn($maxSizeLabel, 2)
+[System.Windows.Controls.Grid]::SetColumn($maxSizeLabel, 3)
 $filterGrid.Children.Add($maxSizeLabel)
 
 $maxSizeBox = New-Object System.Windows.Controls.TextBox
-$maxSizeBox.Width = 60
+$maxSizeBox.Width = $inputLength
 $maxSizeBox.Style = $window.Resources["InputStyle"]
 $maxSizeBox.ToolTip = "输入最大文件大小"
 [System.Windows.Controls.Grid]::SetRow($maxSizeBox, 2)
-[System.Windows.Controls.Grid]::SetColumn($maxSizeBox, 3)
+[System.Windows.Controls.Grid]::SetColumn($maxSizeBox, 4)
 $filterGrid.Children.Add($maxSizeBox)
 
 $maxSizeUnit = New-Object System.Windows.Controls.ComboBox
@@ -318,7 +321,7 @@ $maxSizeUnit.Items.Add("MB")
 $maxSizeUnit.Items.Add("GB")
 $maxSizeUnit.SelectedItem = "MB"
 [System.Windows.Controls.Grid]::SetRow($maxSizeUnit, 2)
-[System.Windows.Controls.Grid]::SetColumn($maxSizeUnit, 3)
+[System.Windows.Controls.Grid]::SetColumn($maxSizeUnit, 5)
 $filterGrid.Children.Add($maxSizeUnit)
 
 # 查询和重置按钮
