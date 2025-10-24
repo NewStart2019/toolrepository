@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  emqx:
+    image: 172.16.0.197:8083/emqx/emqx:5.8.8
+    container_name: emqx
+    restart: unless-stopped
+    network_mode: bridge
+    ports:
+      # tcp
+      - "1883:1883"
+      # mqtt ssl
+      - "18883:8883"
+      # ws:
+      - "18083:8083"
+      # wss:
+      - "18884:8084"
+      # http:dashboard
+      - "19083:18083"
+    environment:
+      - TZ=Asia/Shanghai
