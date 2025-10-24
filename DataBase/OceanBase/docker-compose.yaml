@@ -1,0 +1,17 @@
+version: '3'
+services:
+  oceanbase:
+    image: oceanbase/oceanbase-ce:4.3.5-lts
+    container_name: "oceanbase"
+    restart: always
+    privileged: true  # 需特权模式
+    network_mode: bridge
+    ports:
+      # MySQL 兼容端口（客户端连接）
+      - "2881:2881"
+      # RPC 端口（内部通信）
+      - "2882:2882"
+      # Web 控制台端口（OCP）
+      - "2883:2883"
+    environment:
+      - OB_SYS_PASSWORD=123456  # 与配置文件保持一致
