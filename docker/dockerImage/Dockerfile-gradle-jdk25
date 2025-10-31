@@ -1,0 +1,51 @@
+FROM docker:git
+LABEL org.opencontainers.image.authors="zqh"
+ARG VERSION=11
+ARG GRADLE_VERSION=7.6
+WORKDIR /app
+# 设置阿里云镜像仓库
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+# 下载工具
+RUN apk update && apk add --no-cache curl tar
+# 安装jdk
+RUN curl -L http://172.16.0.227:84/jdk/Linux/OpenJDK25U-jdk_x64_alpine-linux_hotspot_25.0.1_8.tar.gz -o /tmp/jdk.tar.gz && \
+    mkdir -p /opt/java && \
+    tar -xzf /tmp/jdk.tar.gz -C /opt/java --strip-components=1 && \
+    rm /tmp/jdk.tar.gz
+
+ENV JAVA_HOME=/opt/java
+ENV PATH=$JAVA_HOME/bin:$PATH
+
+# 安装sshpass
+RUN apk add sshpass
+
+# 创建目录
+RUN mkdir -p /root/.docker/
+RUN mkdir /root/.ssh && touch /root/.ssh/known_hosts
+COPY id_rsa /root/.ssh/id_rsa
+RUN apk add dos2unix
+RUN dos2unix /root/.ssh/id_rsa
+# Permissions 0755 for '/root/.ssh/id_rsa' are too open
+RUN chmod 700 ~/.ssh
+RUN chmod 600 /root/.ssh/id_rsa
+
+COPY config.json /root/.docker/config.json
+
+RUN apk add --no-cache bash unzip
+
+RUN curl http://172.16.0.227:84/gradle/gradle-${GRADLE_VERSION}-bin.zip -o /tmp/gradle.zip && \
+    unzip /tmp/gradle.zip -d /opt && \
+    ln -s /opt/gradle-${GRADLE_VERSION} /opt/gradle && \
+    rm /tmp/gradle.zip
+
+ENV PATH="/opt/gradle/bin:${PATH}"
+
+RUN apk cache clean
+COPY dockerDelete.sh /app/
+
+# 验证安装 即使设置了 ENV PATH=...，在 RUN 命令中可能因为使用 /bin/sh 而不加载环境变量。
+# RUN source /etc/profile && java -version && gradle --version
+
+RUN apk del --no-cache wget dos2unix
+
+ENTRYPOINT ["top"]

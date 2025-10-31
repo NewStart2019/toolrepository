@@ -1,0 +1,1 @@
+1. **在alpine:3.22.2中没有jdk21**，只能手动下载.执行命令搜索： apk update && apk search openjdk 
