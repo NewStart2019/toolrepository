@@ -56,5 +56,5 @@ services:
       args:
         VERSION: 25
         GRADLE_VERSION: 9.1.0
-    image: 172.16.0.197:8083/tool/docker/gradle-25:0.1
+    image: 172.16.0.197:8083/tool/docker/gradle-25:0.2
     container_name: test

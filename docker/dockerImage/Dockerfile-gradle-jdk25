@@ -47,5 +47,3 @@ COPY dockerDelete.sh /app/
 # RUN source /etc/profile && java -version && gradle --version
 
 RUN apk del --no-cache wget dos2unix
-
-ENTRYPOINT ["top"]
