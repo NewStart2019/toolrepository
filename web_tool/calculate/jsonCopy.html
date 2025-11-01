@@ -386,12 +386,6 @@
                 "Ctrl-Y": function (cm) {
                     cm.execCommand("foldAll");
                 },
-                "F11": function(cm) {
-                    cm.setOption("fullScreen", !cm.getOption("fullScreen"));
-                },
-                "Esc": function(cm) {
-                    if (cm.getOption("fullScreen")) cm.setOption("fullScreen", false);
-                },
                 "Ctrl-J": "toMatchingTag",
             }
         };

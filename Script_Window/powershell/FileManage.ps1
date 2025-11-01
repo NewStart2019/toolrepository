@@ -1,4 +1,5 @@
 ﻿Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, System.Windows.Forms, PresentationFramework.Aero
+Add-Type -AssemblyName System.Xaml
 
 # 主窗口
 $window = New-Object System.Windows.Window
@@ -8,7 +9,7 @@ $window.Height = 800
 $window.MinWidth = 1100
 $window.MinHeight = 700
 $window.WindowStartupLocation = [System.Windows.WindowStartupLocation]::CenterScreen
-$window.Background = [System.Windows.Media.Colors]::White
+$window.Background = [System.Windows.Media.Brush]::White
 
 # 创建资源字典，用于样式定义
 $resources = New-Object System.Windows.ResourceDictionary
@@ -27,7 +28,11 @@ function New-Setter
         [System.Windows.DependencyProperty]$Property,
         $Value
     )
-    New-Object System.Windows.Setter($Property, $Value)
+    if (-not $Property)
+    {
+        throw "Property cannot be null."
+    }
+    return New-Object System.Windows.Setter -ArgumentList $Property, $Value
 }
 
 # 定义按钮样式
@@ -38,24 +43,41 @@ $buttonStyle.Setters.Add((New-Object System.Windows.Setter([System.Windows.Contr
 $buttonStyle.Setters.Add((New-Object System.Windows.Setter([System.Windows.Controls.Control]::BorderThicknessProperty, (New-Object System.Windows.Thickness(0)))))
 $buttonStyle.Setters.Add((New-Object System.Windows.Setter([System.Windows.Controls.Control]::MarginProperty, (New-Object System.Windows.Thickness(5)))))
 $buttonStyle.Setters.Add((New-Object System.Windows.Setter([System.Windows.Controls.Control]::FontWeightProperty, [System.Windows.FontWeights]::Normal)))
-$buttonStyle.Setters.Add((NewOfWorkflow.System.Windows.Setter([System.Windows.Controls.Control]::FontSizeProperty, 14)))
+$buttonStyle.Setters.Add((New-Object System.Windows.Setter([System.Windows.Controls.Control]::FontSizeProperty, 14)))
 
 # 按钮悬停效果
 $trigger = New-Object System.Windows.Trigger
 $trigger.Property = [System.Windows.Controls.Button]::IsMouseOverProperty
 $trigger.Value = $true
-$hoverColor = [System.Windows.Media.Color]::FromArgb(255, 18, 85, 155) # #12559B
-$trigger.Setters.Add((New-Object System.Windows.Setter([System.Windows.Controls.Control]::BackgroundProperty, [System.Windows.Media.SolidColorBrush]$hoverColor)))
-$buttonStyle.Triggers.Add($trigger)
 
-$resources.Add("ButtonStyle", $buttonStyle)
+# 定义 New-Setter 函数
+function New-Setter {
+    param(
+        [System.Windows.DependencyProperty] $Property,
+        $Value
+    )
+    return New-Object System.Windows.Setter -ArgumentList $Property, $Value
+}
 
-# 选中的按钮样式
-$selectedButtonStyle = New-Object System.Windows.Style([System.Windows.Controls.Button])
-$selectedButtonStyle.BasedOn = $buttonStyle
-$selectedButtonStyle.Setters.Add((New-Object System.Windows.Setter([System.Windows.Controls.Control]::BackgroundProperty, [System.Windows.Media.SolidColorBrush]$hoverColor)))
-$selectedButtonStyle.Setters.Add((New-Object System.Windows.Setter([System.Windows.Controls.Control]::FontWeightProperty, [System.Windows.FontWeights]::Bold)))
+# 创建资源字典
+$resources = New-Object System.Windows.ResourceDictionary
+
+# 创建悬停颜色画笔
+$hoverColor = [System.Windows.Media.ColorConverter]::ConvertFromString("#007ACC")
+$hoverBrush = New-Object System.Windows.Media.SolidColorBrush($hoverColor)
+
+# 创建选中按钮样式
+$selectedButtonStyle = New-Object System.Windows.Style -ArgumentList ([System.Windows.Controls.Button])
+$selectedButtonStyle.BasedOn = $buttonStyle  # 可选：基于某个基础样式
+
+# 添加 Setters（使用 New-Setter 避免类型问题）
+$selectedButtonStyle.Setters.Add((New-Setter ([System.Windows.Controls.Control]::BackgroundProperty) $hoverBrush))
+$selectedButtonStyle.Setters.Add((New-Setter ([System.Windows.Controls.Control]::FontWeightProperty) [System.Windows.FontWeights]::Bold))
+$selectedButtonStyle.Setters.Add((New-Setter ([System.Windows.Controls.Control]::FontSizeProperty) 14.0))  # 显式 double
+
+# 添加到资源字典
 $resources.Add("SelectedButtonStyle", $selectedButtonStyle)
+$resources.Add("ButtonStyle", $buttonStyle)
 
 # 输入框样式
 $inputStyle = New-Object System.Windows.Style([System.Windows.Controls.TextBox])
@@ -105,7 +127,7 @@ $dataGridStyle.Setters.Add((New-Object System.Windows.Setter([System.Windows.Con
 $dataGridStyle.Setters.Add((New-Object System.Windows.Setter([System.Windows.Controls.DataGrid]::RowHeightProperty, 32)))
 $dataGridStyle.Setters.Add((New-Object System.Windows.Setter([System.Windows.Controls.DataGrid]::AlternatingRowBackgroundProperty, [System.Windows.Media.Colors]::White)))
 
-$headerStyle = New-Object System.Windows.Style([System.Windows.Controls.DataGridColumnHeader])
+$headerStyle = New-Object System.Windows.Style([System.Windows.Controls.Primitives.DataGridColumnHeader])
 $headerStyle.Setters.Add((New-Setter ([System.Windows.Controls.Control]::BackgroundProperty) $primaryColor))
 $headerStyle.Setters.Add((New-Setter ([System.Windows.Controls.Control]::ForegroundProperty) [System.Windows.Media.Brushes]::White))
 $headerStyle.Setters.Add((New-Setter ([System.Windows.Controls.Control]::FontSizeProperty) 12))
@@ -114,7 +136,7 @@ $headerStyle.Setters.Add((New-Setter ([System.Windows.Controls.Control]::Padding
 
 # 应用到 DataGrid 的 HeaderStyle
 $dataGridStyle = New-Object System.Windows.Style([System.Windows.Controls.DataGrid])
-$dataGridStyle.Setters.Add((New-Setter ([System.Windows.Controls.DataGrid]::HeaderStyleProperty) $headerStyle))
+$dataGridStyle.Setters.Add((New-Setter ([System.Windows.Controls.DataGrid]::ColumnHeaderStyleProperty) $headerStyle))
 
 # 创建 DataGridCell 的样式
 $cellStyle = New-Object System.Windows.Style([System.Windows.Controls.DataGridCell])

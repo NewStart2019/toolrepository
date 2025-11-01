@@ -1,241 +1,383 @@
-﻿Add-Type -AssemblyName PresentationFramework
-Add-Type -AssemblyName PresentationCore
-Add-Type -AssemblyName WindowsBase
-
-# 配置常量
-$cacheFilePath = Join-Path $env:LOCALAPPDATA "FileSecurityManager\file_cache.dat"
-$partialCachePath = Join-Path $env:LOCALAPPDATA "FileSecurityManager\partial_cache.dat"
-$maxThreads = [Math]::Min(16, [Environment]::ProcessorCount * 2)
-$scanDepth = 10
-
-# 确保缓存目录存在
-$cacheDir = Split-Path $cacheFilePath -Parent
-if (-not (Test-Path $cacheDir)) {
-    New-Item -Path $cacheDir -ItemType Directory -Force | Out-Null
-}
-
-# 全局变量
-$script:allFiles = @()
-$script:isScanning = $false
-$script:scanJobs = @()
-$script:totalDisks = 0
-$script:completedDisks = 0
-$script:scanTimer = $null
-$script:currentFilesCount = 0
-$script:stopRequested = $false
+﻿Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, System.Windows.Forms, PresentationFramework.Aero
+Add-Type -AssemblyName System.Xaml
 
 # 主窗口
 $window = New-Object System.Windows.Window
-$window.Title = "高速文件扫描工具"
+$window.Title = "Windows 文件安全管理工具"
 $window.Width = 1300
 $window.Height = 800
 $window.MinWidth = 1100
 $window.MinHeight = 700
 $window.WindowStartupLocation = [System.Windows.WindowStartupLocation]::CenterScreen
+$window.Background = [System.Windows.Media.Brush]::White
 
-# 资源字典与样式
+# 创建资源字典，用于样式定义
 $resources = New-Object System.Windows.ResourceDictionary
+
+# 定义主色调
+$primaryColor = [System.Windows.Media.Color]::FromArgb(255, 26, 102, 192) # #1A66C0
+$primaryBrush = New-Object System.Windows.Media.SolidColorBrush($primaryColor)
+$secondaryColor = [System.Windows.Media.Color]::FromArgb(255, 45, 125, 219) # #2D7DDB
+$accentColor = [System.Windows.Media.Color]::FromArgb(255, 110, 190, 245) # #6EBCF5
+$textColor = [System.Windows.Media.Color]::FromArgb(255, 51, 51, 51) # #333333
+$lightGray = [System.Windows.Media.Color]::FromArgb(255, 240, 240, 240) # #F0F0F0
+$borderColor = [System.Windows.Media.Color]::FromArgb(255, 220, 220, 220) # #DCDCDC
+
+function New-Setter
+{
+    param(
+        [System.Windows.DependencyProperty]$Property,
+        $Value
+    )
+    if (-not $Property)
+    {
+        throw "Property cannot be null."
+    }
+    return New-Object System.Windows.Setter -ArgumentList $Property, $Value
+}
+
+# 定义按钮样式
 $buttonStyle = New-Object System.Windows.Style([System.Windows.Controls.Button])
-$bgColor = [System.Windows.Media.Color]::FromArgb(255, 45, 125, 219)
-$buttonStyle.Setters.Add((New-Object System.Windows.Setter([System.Windows.Controls.Control]::BackgroundProperty, [System.Windows.Media.SolidColorBrush]$bgColor)))
-$buttonStyle.Setters.Add((New-Object System.Windows.Setter([System.Windows.Controls.Control]::ForegroundProperty, [System.Windows.Media.Brushes]::White)))
-$buttonStyle.Setters.Add((New-Object System.Windows.Setter([System.Windows.Controls.Control]::PaddingProperty, (New-Object System.Windows.Thickness(10, 5, 10, 5)))))
-$buttonStyle.Setters.Add((New-Object System.Windows.Setter([System.Windows.Controls.Control]::MarginProperty, (New-Object System.Windows.Thickness(5)))))
-$trigger = New-Object System.Windows.Trigger
-$trigger.Property = [System.Windows.Controls.Button]::IsMouseOverProperty
-$trigger.Value = $true
-$hoverColor = [System.Windows.Media.Color]::FromArgb(255, 26, 102, 192)
-$trigger.Setters.Add((New-Object System.Windows.Setter([System.Windows.Controls.Control]::BackgroundProperty, [System.Windows.Media.SolidColorBrush]$hoverColor)))
-$buttonStyle.Triggers.Add($trigger)
+$buttonStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::BackgroundProperty $primaryBrush))
+$buttonStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::ForegroundProperty [System.Windows.Media.Brushes]::White))
+$buttonStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::PaddingProperty (New-Object System.Windows.Thickness(12, 6, 12, 6))))
+$buttonStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::BorderThicknessProperty (New-Object System.Windows.Thickness(0))))
+$buttonStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::MarginProperty (New-Object System.Windows.Thickness(5))))
+$buttonStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::FontWeightProperty [System.Windows.FontWeights]::Normal))
+$buttonStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::FontSizeProperty ([double]14)))
+
+# 创建悬停颜色画笔
+$hoverColor = [System.Windows.Media.ColorConverter]::ConvertFromString("#007ACC")
+$hoverBrush = New-Object System.Windows.Media.SolidColorBrush($hoverColor)
+
+# 创建选中按钮样式
+$selectedButtonStyle = New-Object System.Windows.Style -ArgumentList ([System.Windows.Controls.Button])
+$selectedButtonStyle.BasedOn = $buttonStyle  # 基于基础样式
+
+# 添加 Setters（使用正确的参数传递方式）
+$selectedButtonStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::BackgroundProperty $hoverBrush))
+$selectedButtonStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::FontWeightProperty [System.Windows.FontWeights]::Bold))
+$selectedButtonStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::FontSizeProperty ([double]14)))
+
+# 添加到资源字典
+$resources.Add("SelectedButtonStyle", $selectedButtonStyle)
 $resources.Add("ButtonStyle", $buttonStyle)
+
+# 输入框样式
+$inputStyle = New-Object System.Windows.Style([System.Windows.Controls.TextBox])
+$inputStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::BackgroundProperty [System.Windows.Media.Brushes]::White))
+$inputStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::BorderBrushProperty (New-Object System.Windows.Media.SolidColorBrush($borderColor))))
+$inputStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::BorderThicknessProperty (New-Object System.Windows.Thickness(1))))
+$inputStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::PaddingProperty (New-Object System.Windows.Thickness(8, 4, 8, 4))))
+$inputStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::FontSizeProperty ([double]12)))
+$inputStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::VerticalAlignmentProperty [System.Windows.VerticalAlignment]::Center))
+$inputStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::MarginProperty (New-Object System.Windows.Thickness(5))))
+$resources.Add("InputStyle", $inputStyle)
+
+# 下拉框样式
+$comboStyle = New-Object System.Windows.Style([System.Windows.Controls.ComboBox])
+$comboStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::BackgroundProperty [System.Windows.Media.Brushes]::White))
+$comboStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::BorderBrushProperty (New-Object System.Windows.Media.SolidColorBrush($borderColor))))
+$comboStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::BorderThicknessProperty (New-Object System.Windows.Thickness(1))))
+$comboStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::PaddingProperty (New-Object System.Windows.Thickness(8, 4, 8, 4))))
+$comboStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::FontSizeProperty ([double]12)))
+$comboStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::VerticalAlignmentProperty [System.Windows.VerticalAlignment]::Center))
+$comboStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::MarginProperty (New-Object System.Windows.Thickness(5))))
+$resources.Add("ComboStyle", $comboStyle)
+
+# 标签样式
+$labelStyle = New-Object System.Windows.Style([System.Windows.Controls.Label])
+$labelStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::ForegroundProperty (New-Object System.Windows.Media.SolidColorBrush($textColor))))
+$labelStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::FontSizeProperty ([double]12)))
+$labelStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::VerticalAlignmentProperty [System.Windows.VerticalAlignment]::Center))
+$labelStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::MarginProperty (New-Object System.Windows.Thickness(5, 0, 5, 0))))
+$resources.Add("LabelStyle", $labelStyle)
+
+# 卡片样式
+$cardStyle = New-Object System.Windows.Style([System.Windows.Controls.Border])
+$cardStyle.Setters.Add((New-Setter [System.Windows.Controls.Border]::BackgroundProperty [System.Windows.Media.Brushes]::White))
+$cardStyle.Setters.Add((New-Setter [System.Windows.Controls.Border]::BorderBrushProperty (New-Object System.Windows.Media.SolidColorBrush($borderColor))))
+$cardStyle.Setters.Add((New-Setter [System.Windows.Controls.Border]::BorderThicknessProperty (New-Object System.Windows.Thickness(1))))
+$cardStyle.Setters.Add((New-Setter [System.Windows.Controls.Border]::CornerRadiusProperty (New-Object System.Windows.CornerRadius(8))))
+$cardStyle.Setters.Add((New-Setter [System.Windows.Controls.Border]::PaddingProperty (New-Object System.Windows.Thickness(15))))
+$cardStyle.Setters.Add((New-Setter [System.Windows.Controls.Border]::MarginProperty (New-Object System.Windows.Thickness(15))))
+$resources.Add("CardStyle", $cardStyle)
+
+# 数据网格样式
+$dataGridStyle = New-Object System.Windows.Style([System.Windows.Controls.DataGrid])
+$dataGridStyle.Setters.Add((New-Setter [System.Windows.Controls.DataGrid]::BackgroundProperty [System.Windows.Media.Brushes]::White))
+$dataGridStyle.Setters.Add((New-Setter [System.Windows.Controls.DataGrid]::BorderBrushProperty (New-Object System.Windows.Media.SolidColorBrush($borderColor))))
+$dataGridStyle.Setters.Add((New-Setter [System.Windows.Controls.DataGrid]::BorderThicknessProperty (New-Object System.Windows.Thickness(1))))
+$dataGridStyle.Setters.Add((New-Setter [System.Windows.Controls.DataGrid]::RowHeightProperty 32))
+$dataGridStyle.Setters.Add((New-Setter [System.Windows.Controls.DataGrid]::AlternatingRowBackgroundProperty [System.Windows.Media.Colors]::White))
+
+$headerStyle = New-Object System.Windows.Style([System.Windows.Controls.Primitives.DataGridColumnHeader])
+$headerStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::BackgroundProperty $primaryBrush))
+$headerStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::ForegroundProperty [System.Windows.Media.Brushes]::White))
+$headerStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::FontSizeProperty ([double]12)))
+$headerStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::FontWeightProperty [System.Windows.FontWeights]::SemiBold))
+$headerStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::PaddingProperty (New-Object System.Windows.Thickness(10, 5, 10, 5))))
+
+# 应用到 DataGrid 的 HeaderStyle
+$dataGridStyle = New-Object System.Windows.Style([System.Windows.Controls.DataGrid])
+$dataGridStyle.Setters.Add((New-Setter [System.Windows.Controls.DataGrid]::ColumnHeaderStyleProperty $headerStyle))
+
+# 创建 DataGridCell 的样式
+$cellStyle = New-Object System.Windows.Style([System.Windows.Controls.DataGridCell])
+$cellStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::PaddingProperty (New-Object System.Windows.Thickness(10, 5, 10, 5))))
+$cellStyle.Setters.Add((New-Setter [System.Windows.Controls.Control]::VerticalAlignmentProperty [System.Windows.VerticalAlignment]::Center))
+
+# 应用到 DataGrid
+$dataGridStyle.Setters.Add((New-Setter [System.Windows.Controls.DataGrid]::CellStyleProperty $cellStyle))
+
+$resources.Add("DataGridStyle", $dataGridStyle)
+
 $window.Resources = $resources
 
-# 主布局网格
+# 创建主布局容器
 $mainGrid = New-Object System.Windows.Controls.Grid
 $mainGrid.Margin = 10
-1..5 | ForEach-Object { $mainGrid.RowDefinitions.Add((New-Object System.Windows.Controls.RowDefinition)) }
-$mainGrid.RowDefinitions[0].Height = 50    # 标题
-$mainGrid.RowDefinitions[1].Height = 60    # 控制栏
-$mainGrid.RowDefinitions[2].Height = 120   # 筛选栏
-$mainGrid.RowDefinitions[3].Height = "*"   # 内容区
-$mainGrid.RowDefinitions[4].Height = 50    # 状态栏
+
+# 定义网格列和行
+$mainGrid.ColumnDefinitions.Add((New-Object System.Windows.Controls.ColumnDefinition))
+
+$row1 = New-Object System.Windows.Controls.RowDefinition
+$row1.Height = 60
+$mainGrid.RowDefinitions.Add($row1)  # 标题行
+
+$row2 = New-Object System.Windows.Controls.RowDefinition
+$row2.Height = 50
+$mainGrid.RowDefinitions.Add($row2)  # 功能切换栏
+
+$row3 = New-Object System.Windows.Controls.RowDefinition
+$row3.Height = 200
+$mainGrid.RowDefinitions.Add($row3)  # 查询条件栏
+
+$row4 = New-Object System.Windows.Controls.RowDefinition
+$row4.Height = "*"
+$mainGrid.RowDefinitions.Add($row4)  # 内容区域
+
+$row5 = New-Object System.Windows.Controls.RowDefinition
+$row5.Height = 60
+$mainGrid.RowDefinitions.Add($row5)  # 底部按钮
+
 $window.Content = $mainGrid
 
 # 标题
 $titleText = New-Object System.Windows.Controls.TextBlock
-$titleText.Text = "高速文件扫描工具"
-$titleText.FontSize = 18
+$titleText.Text = "Windows 文件安全管理工具"
+$titleText.FontSize = 20
 $titleText.FontWeight = [System.Windows.FontWeights]::Bold
+$titleText.Foreground = [System.Windows.Media.SolidColorBrush]$textColor
 $titleText.VerticalAlignment = [System.Windows.VerticalAlignment]::Center
 $titleText.Margin = 5
 [System.Windows.Controls.Grid]::SetRow($titleText, 0)
 $mainGrid.Children.Add($titleText)
 
-# 控制栏
-$controlBar = New-Object System.Windows.Controls.StackPanel
-$controlBar.Orientation = [System.Windows.Controls.Orientation]::Horizontal
-$controlBar.Margin = 5
-[System.Windows.Controls.Grid]::SetRow($controlBar, 1)
-$mainGrid.Children.Add($controlBar)
+# 功能切换栏
+$toggleBar = New-Object System.Windows.Controls.StackPanel
+$toggleBar.Orientation = [System.Windows.Controls.Orientation]::Horizontal
+$toggleBar.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Left
+$toggleBar.VerticalAlignment = [System.Windows.VerticalAlignment]::Center
+[System.Windows.Controls.Grid]::SetRow($toggleBar, 1)
+$mainGrid.Children.Add($toggleBar)
 
-# 初始化按钮
-$btnStartScan = New-Object System.Windows.Controls.Button
-$btnStartScan.Content = "开始扫描"
-$btnStartScan.Style = $window.Resources["ButtonStyle"]
-$controlBar.Children.Add($btnStartScan)
+# 切换按钮
+$btnRecent = New-Object System.Windows.Controls.Button
+$btnRecent.Content = "最近文档"
+$btnRecent.Style = $window.Resources["SelectedButtonStyle"]
+$btnRecent.Tag = "Recent"
+$btnRecent.Width = 90
 
-$btnStopScan = New-Object System.Windows.Controls.Button
-$btnStopScan.Content = "停止扫描"
-$btnStopScan.Style = $window.Resources["ButtonStyle"]
-$btnStopScan.IsEnabled = $false
-$controlBar.Children.Add($btnStopScan)
+$btnTempLogs = New-Object System.Windows.Controls.Button
+$btnTempLogs.Content = "临时日志文件"
+$btnTempLogs.Style = $window.Resources["ButtonStyle"]
+$btnTempLogs.Tag = "TempLogs"
+$btnTempLogs.Width = 130
 
-$scanProgress = New-Object System.Windows.Controls.ProgressBar
-$scanProgress.Width = 300
-$scanProgress.Height = 20
-$scanProgress.Margin = 5
-$scanProgress.Visibility = [System.Windows.Visibility]::Hidden
-$scanProgress.Value = 0
-$controlBar.Children.Add($scanProgress)
+$toggleBar.Children.Add($btnRecent)
+$toggleBar.Children.Add($btnTempLogs)
 
-$statusText = New-Object System.Windows.Controls.TextBlock
-$statusText.Text = "就绪"
-$statusText.Margin = 5
-$statusText.MinWidth = 200
-$controlBar.Children.Add($statusText)
+# 查询条件卡
+$filterCard = New-Object System.Windows.Controls.Border
+$filterCard.Style = $window.Resources["CardStyle"]
+[System.Windows.Controls.Grid]::SetRow($filterCard, 2)
+$mainGrid.Children.Add($filterCard)
 
-# 筛选栏
-$filterPanel = New-Object System.Windows.Controls.StackPanel
-$filterPanel.Orientation = [System.Windows.Controls.Orientation]::Vertical
-$filterPanel.Margin = 5
-[System.Windows.Controls.Grid]::SetRow($filterPanel, 2)
-$mainGrid.Children.Add($filterPanel)
+# 查询条件布局
+$filterGrid = New-Object System.Windows.Controls.Grid
+$filterGrid.Margin = 0
+$filterCard.Child = $filterGrid
 
-# 搜索框
-$searchRow = New-Object System.Windows.Controls.StackPanel
-$searchRow.Orientation = [System.Windows.Controls.Orientation]::Horizontal
-$filterPanel.Children.Add($searchRow)
+# 定义查询条件网格
+$filterGrid.ColumnDefinitions.Add((New-Object System.Windows.Controls.ColumnDefinition))
+$filterGrid.ColumnDefinitions.Add((New-Object System.Windows.Controls.ColumnDefinition))
+$filterGrid.ColumnDefinitions.Add((New-Object System.Windows.Controls.ColumnDefinition))
+$filterGrid.ColumnDefinitions.Add((New-Object System.Windows.Controls.ColumnDefinition))
+$filterGrid.ColumnDefinitions.Add((New-Object System.Windows.Controls.ColumnDefinition))
+$filterGrid.ColumnDefinitions.Add((New-Object System.Windows.Controls.ColumnDefinition))
 
-$searchLabel = New-Object System.Windows.Controls.TextBlock
-$searchLabel.Text = "文件名搜索:"
-$searchLabel.VerticalAlignment = [System.Windows.VerticalAlignment]::Center
-$searchLabel.Margin = "0 0 5 0"
-$searchLabel.Width = 80
-$searchRow.Children.Add($searchLabel)
+$filterGrid.RowDefinitions.Add((New-Object System.Windows.Controls.RowDefinition))
+$filterGrid.RowDefinitions.Add((New-Object System.Windows.Controls.RowDefinition))
+$filterGrid.RowDefinitions.Add((New-Object System.Windows.Controls.RowDefinition))
+$filterGrid.RowDefinitions.Add((New-Object System.Windows.Controls.RowDefinition))
 
+# 文件名搜索
+$searchLabel = New-Object System.Windows.Controls.Label
+$searchLabel.Content = "文件名:"
+$searchLabel.Style = $window.Resources["LabelStyle"]
+[System.Windows.Controls.Grid]::SetRow($searchLabel, 0)
+[System.Windows.Controls.Grid]::SetColumn($searchLabel, 0)
+$filterGrid.Children.Add($searchLabel)
+
+$inputLength = 200
 $searchBox = New-Object System.Windows.Controls.TextBox
-$searchBox.Width = 200
-$searchBox.Height = 28
-$searchBox.Margin = 2
-$searchBox.ToolTip = "输入文件名或路径关键字（留空则不过滤）"
-$searchRow.Children.Add($searchBox)
+$searchBox.Width = $inputLength
+$searchBox.Style = $window.Resources["InputStyle"]
+$searchBox.ToolTip = "输入文件名进行搜索..."
+[System.Windows.Controls.Grid]::SetRow($searchBox, 0)
+[System.Windows.Controls.Grid]::SetColumn($searchBox, 1)
+$filterGrid.Children.Add($searchBox)
 
-# 时间范围
-$dateRow = New-Object System.Windows.Controls.StackPanel
-$dateRow.Orientation = [System.Windows.Controls.Orientation]::Horizontal
-$filterPanel.Children.Add($dateRow)
-
-$startDateLabel = New-Object System.Windows.Controls.TextBlock
-$startDateLabel.Text = "开始时间:"
-$startDateLabel.VerticalAlignment = [System.Windows.VerticalAlignment]::Center
-$startDateLabel.Margin = "10 0 5 0"
-$startDateLabel.Width = 70
-$dateRow.Children.Add($startDateLabel)
+# 开始时间
+$startLabel = New-Object System.Windows.Controls.Label
+$startLabel.Content = "开始时间:"
+$startLabel.Style = $window.Resources["LabelStyle"]
+[System.Windows.Controls.Grid]::SetRow($startLabel, 1)
+[System.Windows.Controls.Grid]::SetColumn($startLabel, 0)
+$filterGrid.Children.Add($startLabel)
 
 $startDateTimeBox = New-Object System.Windows.Controls.TextBox
-$startDateTimeBox.Width = 180
-$startDateTimeBox.Height = 28
-$startDateTimeBox.Margin = 2
-$startDateTimeBox.Text = ""  # 初始为空
-$startDateTimeBox.ToolTip = "格式: yyyy-MM-dd HH:mm:ss（留空则不过滤）"
-$dateRow.Children.Add($startDateTimeBox)
+$startDateTimeBox.Width = $inputLength
+$startDateTimeBox.Style = $window.Resources["InputStyle"]
+$startDateTimeBox.ToolTip = "格式: yyyy-MM-dd HH:mm:ss"
+$startDateTimeBox.Text = (Get-Date).AddDays(-30).ToString("yyyy-MM-dd HH:mm:ss")
+[System.Windows.Controls.Grid]::SetRow($startDateTimeBox, 1)
+[System.Windows.Controls.Grid]::SetColumn($startDateTimeBox, 1)
+$filterGrid.Children.Add($startDateTimeBox)
 
-$endDateLabel = New-Object System.Windows.Controls.TextBlock
-$endDateLabel.Text = "结束时间:"
-$endDateLabel.VerticalAlignment = [System.Windows.VerticalAlignment]::Center
-$endDateLabel.Margin = "10 0 5 0"
-$endDateLabel.Width = 70
-$dateRow.Children.Add($endDateLabel)
+# 结束时间
+$endLabel = New-Object System.Windows.Controls.Label
+$endLabel.Content = "结束时间:"
+$endLabel.Style = $window.Resources["LabelStyle"]
+[System.Windows.Controls.Grid]::SetRow($endLabel, 1)
+[System.Windows.Controls.Grid]::SetColumn($endLabel, 3)
+$filterGrid.Children.Add($endLabel)
 
 $endDateTimeBox = New-Object System.Windows.Controls.TextBox
-$endDateTimeBox.Width = 180
-$endDateTimeBox.Height = 28
-$endDateTimeBox.Margin = 2
-$endDateTimeBox.Text = ""  # 初始为空
-$endDateTimeBox.ToolTip = "格式: yyyy-MM-dd HH:mm:ss（留空则不过滤）"
-$dateRow.Children.Add($endDateTimeBox)
+$endDateTimeBox.Width = $inputLength
+$endDateTimeBox.Style = $window.Resources["InputStyle"]
+$endDateTimeBox.ToolTip = "格式: yyyy-MM-dd HH:mm:ss"
+$endDateTimeBox.Text = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+[System.Windows.Controls.Grid]::SetRow($endDateTimeBox, 1)
+[System.Windows.Controls.Grid]::SetColumn($endDateTimeBox, 4)
+$filterGrid.Children.Add($endDateTimeBox)
 
-# 大小筛选
-$sizeRow = New-Object System.Windows.Controls.StackPanel
-$sizeRow.Orientation = [System.Windows.Controls.Orientation]::Horizontal
-$filterPanel.Children.Add($sizeRow)
-
-$minSizeLabel = New-Object System.Windows.Controls.TextBlock
-$minSizeLabel.Text = "最小大小:"
-$minSizeLabel.VerticalAlignment = [System.Windows.VerticalAlignment]::Center
-$minSizeLabel.Margin = "10 0 5 0"
-$minSizeLabel.Width = 70
-$sizeRow.Children.Add($minSizeLabel)
+# 最小大小
+$minSizeLabel = New-Object System.Windows.Controls.Label
+$minSizeLabel.Content = "最小大小:"
+$minSizeLabel.Style = $window.Resources["LabelStyle"]
+[System.Windows.Controls.Grid]::SetRow($minSizeLabel, 2)
+[System.Windows.Controls.Grid]::SetColumn($minSizeLabel, 0)
+$filterGrid.Children.Add($minSizeLabel)
 
 $minSizeBox = New-Object System.Windows.Controls.TextBox
-$minSizeBox.Width = 80
-$minSizeBox.Height = 28
-$minSizeBox.Margin = 2
-$minSizeBox.Text = ""  # 初始为空
-$minSizeBox.ToolTip = "留空则不过滤"
-$sizeRow.Children.Add($minSizeBox)
+$minSizeBox.Width = $inputLength
+$minSizeBox.Style = $window.Resources["InputStyle"]
+$minSizeBox.ToolTip = "输入最小文件大小"
+[System.Windows.Controls.Grid]::SetRow($minSizeBox, 2)
+[System.Windows.Controls.Grid]::SetColumn($minSizeBox, 1)
+$filterGrid.Children.Add($minSizeBox)
 
 $minSizeUnit = New-Object System.Windows.Controls.ComboBox
 $minSizeUnit.Width = 60
-$minSizeUnit.Height = 28
-$minSizeUnit.Margin = 2
-$minSizeUnit.Items.Add("B"); $minSizeUnit.Items.Add("KB"); $minSizeUnit.Items.Add("MB"); $minSizeUnit.Items.Add("GB")
+$minSizeUnit.Style = $window.Resources["ComboStyle"]
+$minSizeUnit.Items.Add("B")
+$minSizeUnit.Items.Add("KB")
+$minSizeUnit.Items.Add("MB")
+$minSizeUnit.Items.Add("GB")
 $minSizeUnit.SelectedItem = "KB"
-$sizeRow.Children.Add($minSizeUnit)
+[System.Windows.Controls.Grid]::SetRow($minSizeUnit, 2)
+[System.Windows.Controls.Grid]::SetColumn($minSizeUnit, 2)
+$filterGrid.Children.Add($minSizeUnit)
 
-$maxSizeLabel = New-Object System.Windows.Controls.TextBlock
-$maxSizeLabel.Text = "最大大小:"
-$maxSizeLabel.VerticalAlignment = [System.Windows.VerticalAlignment]::Center
-$maxSizeLabel.Margin = "10 0 5 0"
-$maxSizeLabel.Width = 70
-$sizeRow.Children.Add($maxSizeLabel)
+# 最大大小
+$maxSizeLabel = New-Object System.Windows.Controls.Label
+$maxSizeLabel.Content = "最大大小:"
+$maxSizeLabel.Style = $window.Resources["LabelStyle"]
+[System.Windows.Controls.Grid]::SetRow($maxSizeLabel, 2)
+[System.Windows.Controls.Grid]::SetColumn($maxSizeLabel, 3)
+$filterGrid.Children.Add($maxSizeLabel)
 
 $maxSizeBox = New-Object System.Windows.Controls.TextBox
-$maxSizeBox.Width = 80
-$maxSizeBox.Height = 28
-$maxSizeBox.Margin = 2
-$maxSizeBox.Text = ""  # 初始为空
-$maxSizeBox.ToolTip = "留空则不过滤"
-$sizeRow.Children.Add($maxSizeBox)
+$maxSizeBox.Width = $inputLength
+$maxSizeBox.Style = $window.Resources["InputStyle"]
+$maxSizeBox.ToolTip = "输入最大文件大小"
+[System.Windows.Controls.Grid]::SetRow($maxSizeBox, 2)
+[System.Windows.Controls.Grid]::SetColumn($maxSizeBox, 4)
+$filterGrid.Children.Add($maxSizeBox)
 
 $maxSizeUnit = New-Object System.Windows.Controls.ComboBox
 $maxSizeUnit.Width = 60
-$maxSizeUnit.Height = 28
-$maxSizeUnit.Margin = 2
-$maxSizeUnit.Items.Add("B"); $maxSizeUnit.Items.Add("KB"); $maxSizeUnit.Items.Add("MB"); $maxSizeUnit.Items.Add("GB")
+$maxSizeUnit.Style = $window.Resources["ComboStyle"]
+$maxSizeUnit.Items.Add("B")
+$maxSizeUnit.Items.Add("KB")
+$maxSizeUnit.Items.Add("MB")
+$maxSizeUnit.Items.Add("GB")
 $maxSizeUnit.SelectedItem = "MB"
-$sizeRow.Children.Add($maxSizeUnit)
+[System.Windows.Controls.Grid]::SetRow($maxSizeUnit, 2)
+[System.Windows.Controls.Grid]::SetColumn($maxSizeUnit, 5)
+$filterGrid.Children.Add($maxSizeUnit)
 
-$btnSearch = New-Object System.Windows.Controls.Button
-$btnSearch.Content = "搜索"
-$btnSearch.Style = $window.Resources["ButtonStyle"]
-$btnSearch.Margin = "20 0 0 0"
-$sizeRow.Children.Add($btnSearch)
+# 查询和重置按钮
+$queryPanel = New-Object System.Windows.Controls.StackPanel
+$queryPanel.Orientation = [System.Windows.Controls.Orientation]::Horizontal
+$queryPanel.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Left
+[System.Windows.Controls.Grid]::SetRow($queryPanel, 3)
+[System.Windows.Controls.Grid]::SetColumn($queryPanel, 0)
+$filterGrid.Children.Add($queryPanel)
 
-# 内容区域
-$contentScroll = New-Object System.Windows.Controls.ScrollViewer
-[System.Windows.Controls.Grid]::SetRow($contentScroll, 3)
-$mainGrid.Children.Add($contentScroll)
+$btnQuery = New-Object System.Windows.Controls.Button
+$btnQuery.Content = "查询"
+$btnQuery.Style = $window.Resources["ButtonStyle"]
+$btnQuery.Width = 70
+$queryPanel.Children.Add($btnQuery)
 
+$btnReset = New-Object System.Windows.Controls.Button
+$btnReset.Content = "重置"
+$btnReset.Style = $window.Resources["ButtonStyle"]
+$btnReset.Width = 70
+$queryPanel.Children.Add($btnReset)
+
+# 内容区域容器
+$contentContainer = New-Object System.Windows.Controls.Border
+$contentContainer.Style = $window.Resources["CardStyle"]
+[System.Windows.Controls.Grid]::SetRow($contentContainer, 3)
+$mainGrid.Children.Add($contentContainer)
+
+# 内容区域布局
+$contentGrid = New-Object System.Windows.Controls.Grid
+$contentContainer.Child = $contentGrid
+
+$contentRow = New-Object System.Windows.Controls.RowDefinition
+$contentRow.Height = "*"
+$contentGrid.RowDefinitions.Add($contentRow)
+
+# 创建数据表格
 $fileDataGrid = New-Object System.Windows.Controls.DataGrid
 $fileDataGrid.AutoGenerateColumns = $false
 $fileDataGrid.CanUserAddRows = $false
+$fileDataGrid.CanUserDeleteRows = $false
 $fileDataGrid.IsReadOnly = $true
 $fileDataGrid.SelectionMode = [System.Windows.Controls.DataGridSelectionMode]::Single
 $fileDataGrid.Margin = 5
-$contentScroll.Content = $fileDataGrid
+$fileDataGrid.GridLinesVisibility = [System.Windows.Controls.DataGridGridLinesVisibility]::Horizontal
+$fileDataGrid.Background = [System.Windows.Media.Brushes]::White
+$fileDataGrid.Style = $window.Resources["DataGridStyle"]
+[System.Windows.Controls.Grid]::SetRow($fileDataGrid, 0)
+$contentGrid.Children.Add($fileDataGrid)
 
-# 数据表格列
+# 定义表格列
 $colName = New-Object System.Windows.Controls.DataGridTextColumn
 $colName.Header = "文件名称"
 $colName.Binding = [System.Windows.Data.Binding]"Name"
@@ -243,13 +385,16 @@ $colName.Width = 200
 $fileDataGrid.Columns.Add($colName)
 
 $colSize = New-Object System.Windows.Controls.DataGridTextColumn
-$colSize.Header = "大小"
-$colSize.Binding = [System.Windows.Data.Binding]"FormattedSize"
+$colSize.Header = "大小(字节)"
+$colSize.Binding = [System.Windows.Data.Binding]"Size"
 $colSize.Width = 120
+$colSize.ElementStyle = New-Object System.Windows.Style([System.Windows.Controls.TextBlock])
+$colSize.ElementStyle.Setters.Add((New-Object System.Windows.Setter([System.Windows.Controls.TextBlock]::HorizontalAlignmentProperty, [System.Windows.HorizontalAlignment]::Right)))
+$colSize.ElementStyle.Setters.Add((New-Object System.Windows.Setter([System.Windows.Controls.TextBlock]::ToolTipProperty, [System.Windows.Data.Binding]"FormattedSize")))
 $fileDataGrid.Columns.Add($colSize)
 
 $colLastModified = New-Object System.Windows.Controls.DataGridTextColumn
-$colLastModified.Header = "修改时间"
+$colLastModified.Header = "更新时间"
 $colLastModified.Binding = [System.Windows.Data.Binding]"LastModified"
 $colLastModified.Width = 180
 $fileDataGrid.Columns.Add($colLastModified)
@@ -260,37 +405,147 @@ $colPath.Binding = [System.Windows.Data.Binding]"Path"
 $colPath.Width = "*"
 $fileDataGrid.Columns.Add($colPath)
 
-# 状态栏
-$statusBar = New-Object System.Windows.Controls.StackPanel
-$statusBar.Orientation = [System.Windows.Controls.Orientation]::Horizontal
-$statusBar.Margin = 5
-[System.Windows.Controls.Grid]::SetRow($statusBar, 4)
-$mainGrid.Children.Add($statusBar)
+# 底部按钮区域
+$bottomPanel = New-Object System.Windows.Controls.StackPanel
+$bottomPanel.Orientation = [System.Windows.Controls.Orientation]::Horizontal
+$bottomPanel.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Left
+$bottomPanel.VerticalAlignment = [System.Windows.VerticalAlignment]::Center
+[System.Windows.Controls.Grid]::SetRow($bottomPanel, 4)
+$mainGrid.Children.Add($bottomPanel)
 
-$fileCountText = New-Object System.Windows.Controls.TextBlock
-$fileCountText.Text = "已发现文件: 0"
-$fileCountText.Margin = 5
-$statusBar.Children.Add($fileCountText)
+# 刷新按钮
+$btnRefresh = New-Object System.Windows.Controls.Button
+$btnRefresh.Content = "刷新"
+$btnRefresh.Style = $window.Resources["ButtonStyle"]
+$btnRefresh.Width = 70
+$bottomPanel.Children.Add($btnRefresh)
 
-$scanInfoText = New-Object System.Windows.Controls.TextBlock
-$scanInfoText.Text = "扫描状态: 未开始"
-$scanInfoText.Margin = 5
-$statusBar.Children.Add($scanInfoText)
+# 退出按钮
+$btnExit = New-Object System.Windows.Controls.Button
+$btnExit.Content = "退出"
+$btnExit.Style = $window.Resources["ButtonStyle"]
+$btnExit.Width = 70
+$bottomPanel.Children.Add($btnExit)
 
-# 工具函数 - 格式化文件大小
-function Format-FileSize {
+# 创建右键菜单
+$contextMenu = New-Object System.Windows.Controls.ContextMenu
+
+# 删除文件菜单项
+$miDelete = New-Object System.Windows.Controls.MenuItem
+$miDelete.Header = "删除文件"
+$miDelete.Add_Click({
+    if ($fileDataGrid.SelectedItem)
+    {
+        $path = $fileDataGrid.SelectedItem.Path
+        if (-not [string]::IsNullOrEmpty($path) -and (Test-Path -Path $path))
+        {
+            $result = [System.Windows.MessageBox]::Show(
+                    "确定要删除文件 '$path' 吗？`n此操作不可恢复！",
+                    "确认删除",
+                    [System.Windows.MessageBoxButton]::YesNo,
+                    [System.Windows.MessageBoxImage]::Warning
+            )
+
+            if ($result -eq [System.Windows.MessageBoxResult]::Yes)
+            {
+                try
+                {
+                    Remove-Item -Path $path -Force -ErrorAction Stop
+                    [System.Windows.MessageBox]::Show("文件已成功删除", "操作成功", "OK", "Information")
+                    Apply-Filters  # 刷新列表
+                }
+                catch
+                {
+                    [System.Windows.MessageBox]::Show("删除文件失败: $( $_.Exception.Message )", "错误", "OK", "Error")
+                }
+            }
+        }
+        else
+        {
+            [System.Windows.MessageBox]::Show("文件路径无效或不存在", "错误", "OK", "Error")
+        }
+    }
+})
+$contextMenu.Items.Add($miDelete)
+
+# 属性菜单项
+$miProperties = New-Object System.Windows.Controls.MenuItem
+$miProperties.Header = "属性"
+$miProperties.Add_Click({
+    if ($fileDataGrid.SelectedItem)
+    {
+        $path = $fileDataGrid.SelectedItem.Path
+        if (-not [string]::IsNullOrEmpty($path) -and (Test-Path -Path $path))
+        {
+            # 使用Windows资源管理器显示文件属性
+            $psi = New-Object System.Diagnostics.ProcessStartInfo
+            $psi.FileName = "explorer.exe"
+            $psi.Arguments = "/select,`"$path`""
+            [System.Diagnostics.Process]::Start($psi)
+
+            # 等待资源管理器打开
+            Start-Sleep -Milliseconds 500
+
+            # 发送Alt+Enter快捷键打开属性窗口
+            Add-Type @"
+            using System;
+            using System.Runtime.InteropServices;
+            public class Keyboard {
+                [DllImport("user32.dll")]
+                public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+            }
+"@
+            # Alt键按下
+            [Keyboard]::keybd_event(0x12, 0, 0, [UIntPtr]::Zero)
+            # Enter键按下并释放
+            [Keyboard]::keybd_event(0x0D, 0, 0, [UIntPtr]::Zero)
+            [Keyboard]::keybd_event(0x0D, 0, 2, [UIntPtr]::Zero)
+            # Alt键释放
+            [Keyboard]::keybd_event(0x12, 0, 2, [UIntPtr]::Zero)
+        }
+        else
+        {
+            [System.Windows.MessageBox]::Show("文件路径无效或不存在", "错误", "OK", "Error")
+        }
+    }
+})
+$contextMenu.Items.Add($miProperties)
+
+# 为数据表格添加右键菜单
+$fileDataGrid.ContextMenu = $contextMenu
+
+# 格式化文件大小
+function Format-FileSize
+{
     param([long]$size)
-    if ($size -ge 1GB) { return "{0:N2} GB" -f ($size / 1GB) }
-    elseif ($size -ge 1MB) { return "{0:N2} MB" -f ($size / 1MB) }
-    elseif ($size -ge 1KB) { return "{0:N2} KB" -f ($size / 1KB) }
-    else { return "$size B" }
+    if ($size -ge 1GB)
+    {
+        return "{0:N2} GB" -f ($size / 1GB)
+    }
+    elseif ($size -ge 1MB)
+    {
+        return "{0:N2} MB" -f ($size / 1MB)
+    }
+    elseif ($size -ge 1KB)
+    {
+        return "{0:N2} KB" -f ($size / 1KB)
+    }
+    else
+    {
+        return "$size B"
+    }
 }
 
-# 工具函数 - 转换为字节
-function Convert-ToBytes {
-    param([double]$value, [string]$unit)
-    switch ($unit) {
-        "B" { return $value }
+# 转换大小单位为字节
+function Convert-ToBytes
+{
+    param(
+        [double]$value,
+        [string]$unit
+    )
+    switch ($unit)
+    {
+        "B"  { return $value }
         "KB" { return $value * 1KB }
         "MB" { return $value * 1MB }
         "GB" { return $value * 1GB }
@@ -298,424 +553,239 @@ function Convert-ToBytes {
     }
 }
 
-# 日期转换函数
-function Convert-ToDateTime {
-    param([string]$dateTimeString)
-    # 如果为空直接返回null
-    if ([string]::IsNullOrWhiteSpace($dateTimeString)) {
+# 验证并转换日期时间字符串
+function Convert-ToDateTime
+{
+    param(
+        [string]$InputString,
+        [string]$Format = "yyyy-MM-dd HH:mm:ss"
+    )
+
+    $culture = [System.Globalization.CultureInfo]::InvariantCulture
+    $dateTime = Get-Date
+
+    $result = [DateTime]::TryParseExact(
+            $InputString,
+            $Format,
+            $culture,
+            [System.Globalization.DateTimeStyles]::None,
+            [ref]$dateTime
+    )
+
+    if ($result)
+    {
+        return $dateTime
+    }
+    else
+    {
         return $null
     }
-    $dateTime = $null
-    try { $dateTime = [DateTime]$dateTimeString }
-    catch {}
-    return $dateTime
 }
 
-# 高速扫描核心函数
-$script:fastScanScript = {
-    param(
-        [string]$driveLetter,
-        [ref]$stopFlag
-    )
+# 获取最近文档
+function Get-RecentDocuments
+{
+    $recentDocsPath = Join-Path -Path $env:APPDATA -ChildPath "Microsoft\Windows\Recent"
 
-    $results = New-Object System.Collections.Generic.List[PSObject]
-    $excludePatterns = @(
-        'System Volume Information', 'Program Files', 'Program Files (x86)',
-        'Windows', 'AppData', 'Users\*\AppData', 'Recovery', 'OneDrive'
-    )
-
-    $queue = New-Object System.Collections.Queue
-    $queue.Enqueue(@($driveLetter, 0))
-
-    while ($queue.Count -gt 0 -and !$stopFlag.Value) {
-        $current = $queue.Dequeue()
-        $path = $current[0]
-        $depth = $current[1]
-
-        if ($depth -ge $using:scanDepth) { continue }
-
-        try {
-            $items = Get-ChildItem -Path $path -Force -ErrorAction SilentlyContinue
-
-            foreach ($item in $items) {
-                if ($excludePatterns -contains $item.Name) { continue }
-
-                if ($item.PSIsContainer) {
-                    $queue.Enqueue(@($item.FullName, $depth + 1))
-                }
-                else {
-                    $results.Add([PSCustomObject]@{
-                        Name         = $item.Name
-                        Path         = $item.FullName
-                        RawSize      = $item.Length
-                        FormattedSize = if ($item.Length -ge 1GB) { "{0:N2} GB" -f ($item.Length / 1GB) }
-                        elseif ($item.Length -ge 1MB) { "{0:N2} MB" -f ($item.Length / 1MB) }
-                        elseif ($item.Length -ge 1KB) { "{0:N2} KB" -f ($item.Length / 1KB) }
-                        else { "$($item.Length) B" }
-                        LastModified = $item.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss")
-                        RawDate      = $item.LastWriteTime
-                    })
-                }
-            }
-        }
-        catch {
-            continue
-        }
-    }
-
-    return @{
-        Drive = $driveLetter
-        Files = $results
-        Count = $results.Count
-        Success = !$stopFlag.Value
-    }
-}
-
-# 实时合并扫描结果
-function Merge-ScanResults {
-    param(
-        [PSObject[]]$newFiles,
-        [string]$driveLetter,
-        [int]$newFileCount
-    )
-
-    if (-not $newFiles -or $newFiles.Count -eq 0) { return }
-
-    $script:allFiles = $script:allFiles + $newFiles | Select-Object -Unique
-    $script:currentFilesCount = $script:allFiles.Count
-
-    $window.Dispatcher.Invoke([Action]{
-        $fileCountText.Text = "已发现文件: $($script:currentFilesCount)"
-        $statusText.Text = "磁盘 $driveLetter 新增 $newFileCount 个文件"
-        if ($fileDataGrid.ItemsSource) {
-            $btnSearch.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent)))
-        }
-    }, [System.Windows.Threading.DispatcherPriority]::Normal)
-
-    Save-PartialCache
-}
-
-# 缓存相关函数
-function Save-PartialCache {
-    try {
-        $script:allFiles | ConvertTo-Json -Compress -Depth 1 | Out-File $partialCachePath -Encoding utf8
-    }
-    catch {
-        Write-Error "保存临时缓存失败: $_"
-    }
-}
-
-function Load-PartialCache {
-    if (Test-Path $partialCachePath) {
-        try {
-            return Get-Content $partialCachePath -Raw | ConvertFrom-Json
-        }
-        catch {
-            Write-Error "加载临时缓存失败: $_"
-            Remove-Item $partialCachePath -Force -ErrorAction SilentlyContinue
-        }
-    }
-    return @()
-}
-
-function Save-FullCache {
-    try {
-        $script:allFiles | ConvertTo-Json -Compress -Depth 1 | Out-File $cacheFilePath -Encoding utf8
-        if (Test-Path $partialCachePath) {
-            Remove-Item $partialCachePath -Force
-        }
-        return $true
-    }
-    catch {
-        Write-Error "保存完整缓存失败: $_"
-        return $false
-    }
-}
-
-# 【核心优化】搜索文件函数（支持空值跳过过滤）
-function Search-Files {
-    param(
-        [string]$searchText,
-        [DateTime]$startDate,
-        [DateTime]$endDate,
-        [double]$minSize,
-        [double]$maxSize,
-        [bool]$useMinSize,
-        [bool]$useMaxSize
-    )
-
-    if ($script:allFiles.Count -eq 0) {
-        return @()
-    }
-
-    $filtered = @()
-    $searchText = $searchText.ToLower()
-    $useSearch = -not [string]::IsNullOrWhiteSpace($searchText)
-    $useDateFilter = $startDate -ne $null -or $endDate -ne $null
-
-    foreach ($file in $script:allFiles) {
-        # 文本筛选（为空则跳过）
-        if ($useSearch) {
-            if ($file.Name.ToLower() -notmatch $searchText -and
-                    $file.Path.ToLower() -notmatch $searchText) {
-                continue
-            }
-        }
-
-        # 日期筛选（都为空则跳过）
-        if ($useDateFilter) {
-            $fileDate = [DateTime]$file.RawDate
-            if (($startDate -ne $null -and $fileDate -lt $startDate) -or
-                    ($endDate -ne $null -and $fileDate -gt $endDate)) {
-                continue
-            }
-        }
-
-        # 大小筛选（根据标志判断是否启用）
-        if ($useMinSize -and $file.RawSize -lt $minSize) {
-            continue
-        }
-        if ($useMaxSize -and $file.RawSize -gt $maxSize) {
-            continue
-        }
-
-        $filtered += $file
-    }
-
-    return $filtered | Sort-Object -Property RawDate -Descending
-}
-
-# 开始扫描事件
-$btnStartScan.Add_Click({
-    if ($script:isScanning) {
-        [System.Windows.MessageBox]::Show("扫描已在进行中", "提示", "OK", "Information")
+    if ([string]::IsNullOrEmpty($recentDocsPath) -or (-not (Test-Path -Path $recentDocsPath)))
+    {
+        Write-Verbose "最近文档路径无效或不存在: $recentDocsPath"
         return
     }
 
-    $script:isScanning = $true
-    $script:stopRequested = $false
-    $btnStartScan.IsEnabled = $false
-    $btnStopScan.IsEnabled = $true
-    $scanProgress.Visibility = [System.Windows.Visibility]::Visible
-    $scanProgress.Value = 0
+    Get-ChildItem -Path $recentDocsPath -Filter *.lnk -File -ErrorAction SilentlyContinue | ForEach-Object {
+        try
+        {
+            $shell = New-Object -ComObject WScript.Shell -ErrorAction Stop
+            $shortcut = $shell.CreateShortcut($_.FullName)
 
-    $existingFiles = Load-PartialCache
-    if ($existingFiles) {
-        $script:allFiles = $existingFiles
-        $script:currentFilesCount = $script:allFiles.Count
-        $fileCountText.Text = "已发现文件: $($script:currentFilesCount) (包含缓存)"
-    }
-
-    $disks = Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Root -match '^[A-Z]:\\$' }
-    if (-not $disks -or $disks.Count -eq 0) {
-        [System.Windows.MessageBox]::Show("未发现可用磁盘", "错误", "OK", "Error")
-        $script:isScanning = $false
-        $btnStartScan.IsEnabled = $true
-        $btnStopScan.IsEnabled = $false
-        $scanProgress.Visibility = [System.Windows.Visibility]::Hidden
-        return
-    }
-
-    $script:totalDisks = $disks.Count
-    $script:completedDisks = 0
-    $script:scanJobs = @()
-
-    $statusText.Text = "开始扫描 $($script:totalDisks) 个磁盘..."
-    $scanInfoText.Text = "扫描状态: 进行中 (0/$($script:totalDisks))"
-
-    foreach ($disk in $disks) {
-        $ps = [PowerShell]::Create().AddScript($script:fastScanScript).AddParameters(@{
-            driveLetter = $disk.Root
-            stopFlag    = [ref]$script:stopRequested
-        })
-
-        $asyncResult = $ps.BeginInvoke()
-        $script:scanJobs += ,@{
-            PowerShell = $ps
-            AsyncResult = $asyncResult
-            Drive = $disk.Root
-        }
-    }
-
-    if ($script:scanTimer) { $script:scanTimer.Stop() }
-    $script:scanTimer = New-Object System.Windows.Threading.DispatcherTimer
-    $script:scanTimer.Interval = [TimeSpan]::FromMilliseconds(200)
-    $script:scanTimer.Add_Tick({
-        if (-not $script:isScanning) {
-            $this.Stop()
-            return
-        }
-
-        foreach ($job in @($script:scanJobs)) {
-            if ($job.AsyncResult.IsCompleted) {
-                try {
-                    $result = $job.PowerShell.EndInvoke($job.AsyncResult)
-                    if ($result.Success -and $result.Count -gt 0) {
-                        Merge-ScanResults -newFiles $result.Files -driveLetter $result.Drive -newFileCount $result.Count
-                    }
-
-                    $script:completedDisks++
-                    $progressPercent = ($script:completedDisks / $script:totalDisks) * 100
-                    $window.Dispatcher.Invoke([Action]{
-                        $scanProgress.Value = $progressPercent
-                        $scanInfoText.Text = "扫描状态: 进行中 ($($script:completedDisks)/$($script:totalDisks))"
-                    })
-                }
-                catch {
-                    $window.Dispatcher.Invoke([Action]{
-                        $statusText.Text = "扫描 $($job.Drive) 出错: $($_.Exception.Message)"
-                    })
-                }
-                finally {
-                    $job.PowerShell.Dispose()
-                    $script:scanJobs = $script:scanJobs | Where-Object { $_ -ne $job }
+            if (-not [string]::IsNullOrEmpty($shortcut.TargetPath) -and (Test-Path -Path $shortcut.TargetPath -PathType Leaf))
+            {
+                $fileInfo = Get-Item -Path $shortcut.TargetPath -ErrorAction Stop
+                [PSCustomObject]@{
+                    Name = $fileInfo.Name
+                    Size = $fileInfo.Length
+                    FormattedSize = Format-FileSize $fileInfo.Length
+                    LastModified = $fileInfo.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss")
+                    Path = $fileInfo.FullName
+                    RawSize = $fileInfo.Length
+                    RawDate = $fileInfo.LastWriteTime
                 }
             }
         }
-
-        if ($script:scanJobs.Count -eq 0) {
-            $this.Stop()
-            $script:isScanning = $false
-            $window.Dispatcher.Invoke([Action]{
-                $scanProgress.Visibility = [System.Windows.Visibility]::Hidden
-                $btnStartScan.IsEnabled = $true
-                $btnStopScan.IsEnabled = $false
-                $statusText.Text = "扫描完成，共发现 $($script:currentFilesCount) 个文件"
-                $scanInfoText.Text = "扫描状态: 已完成"
-            })
-            Save-FullCache | Out-Null
+        catch
+        {
+            Write-Verbose "处理快捷方式时出错: $( $_.Exception.Message )"
         }
-    })
-    $script:scanTimer.Start()
-})
+    } | Sort-Object -Property RawDate -Descending
+}
 
-# 停止扫描事件
-$btnStopScan.Add_Click({
-    if (-not $script:isScanning) { return }
+# 获取临时日志文件
+$tempPaths = @(
+    $env:TEMP,
+    "C:\Windows\Temp",
+    (Join-Path -Path $env:USERPROFILE -ChildPath "AppData\Local\Temp")
+)
 
-    $result = [System.Windows.MessageBox]::Show(
-            "确定要停止扫描吗？",
-            "确认停止",
-            [System.Windows.MessageBoxButton]::YesNo,
-            [System.Windows.MessageBoxImage]::Question
-    )
+function Get-TempLogFiles
+{
+    $logFiles = @()
+    foreach ($path in $tempPaths)
+    {
+        if ([string]::IsNullOrEmpty($path) -or (-not (Test-Path -Path $path -ErrorAction SilentlyContinue)))
+        {
+            Write-Verbose "临时路径无效或不存在: $path"
+            continue
+        }
 
-    if ($result -eq [System.Windows.MessageBoxResult]::Yes) {
-        $script:stopRequested = $true
-        $script:isScanning = $false
-
-        if ($script:scanTimer) { $script:scanTimer.Stop() }
-
-        foreach ($job in @($script:scanJobs)) {
-            if (-not $job.AsyncResult.IsCompleted) {
-                $job.PowerShell.Stop()
+        try
+        {
+            $logFiles += Get-ChildItem -Path $path -Include *.log, *.txt -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object {
+                [PSCustomObject]@{
+                    Name = $_.Name
+                    Size = $_.Length
+                    FormattedSize = Format-FileSize $_.Length
+                    LastModified = $_.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss")
+                    Path = $_.FullName
+                    RawSize = $_.Length
+                    RawDate = $_.LastWriteTime
+                }
             }
-            $job.PowerShell.Dispose()
         }
-
-        $script:scanJobs = @()
-        $scanProgress.Visibility = [System.Windows.Visibility]::Hidden
-        $btnStartScan.IsEnabled = $true
-        $btnStopScan.IsEnabled = $false
-        $statusText.Text = "扫描已停止"
-        $scanInfoText.Text = "扫描状态: 已停止"
-        Save-PartialCache | Out-Null
+        catch
+        {
+            Write-Verbose "获取日志文件时出错: $( $_.Exception.Message )"
+        }
     }
-})
+    $logFiles | Sort-Object -Property RawDate -Descending
+}
 
-# 【核心优化】搜索按钮事件（支持空值跳过过滤）
-$btnSearch.Add_Click({
-    if ($script:allFiles.Count -eq 0) {
-        [System.Windows.MessageBox]::Show("尚未扫描到文件，请等待扫描开始后再试", "提示", "OK", "Information")
-        return
+# 应用所有筛选条件
+function Apply-Filters
+{
+    $currentType = if ($btnRecent.Style -eq $window.Resources["SelectedButtonStyle"])
+    {
+        "Recent"
+    }
+    else
+    {
+        "TempLogs"
+    }
+    $allData = if ($currentType -eq "Recent")
+    {
+        Get-RecentDocuments
+    }
+    else
+    {
+        Get-TempLogFiles
     }
 
-    # 日期处理（为空则不启用过滤）
+    # 文本搜索筛选
+    $filterText = $searchBox.Text.Trim().ToLower()
+    if (-not [string]::IsNullOrEmpty($filterText))
+    {
+        $allData = $allData | Where-Object {
+            $_.Name.ToLower().Contains($filterText) -or $_.Path.ToLower().Contains($filterText)
+        }
+    }
+
+    # 时间范围筛选
     $startDate = Convert-ToDateTime $startDateTimeBox.Text
     $endDate = Convert-ToDateTime $endDateTimeBox.Text
 
-    # 验证日期格式（如果填写了的话）
-    if (($startDateTimeBox.Text -ne "" -and $startDate -eq $null) -or
-            ($endDateTimeBox.Text -ne "" -and $endDate -eq $null)) {
-        [System.Windows.MessageBox]::Show("日期时间格式错误`n请使用有效的日期时间格式（yyyy-MM-dd HH:mm:ss）", "错误", "OK", "Error")
-        return
+    if ($startDate)
+    {
+        $allData = $allData | Where-Object { $_.RawDate -ge $startDate }
+    }
+    if ($endDate)
+    {
+        $allData = $allData | Where-Object { $_.RawDate -le $endDate }
     }
 
-    # 大小处理（为空则不启用过滤）
-    $minSize = 0.0
-    $maxSize = 0.0
-    $useMinSize = -not [string]::IsNullOrWhiteSpace($minSizeBox.Text)
-    $useMaxSize = -not [string]::IsNullOrWhiteSpace($maxSizeBox.Text)
-
-    # 验证大小格式（如果填写了的话）
-    if (($useMinSize -and -not [double]::TryParse($minSizeBox.Text, [ref]$minSize)) -or
-            ($useMaxSize -and -not [double]::TryParse($maxSizeBox.Text, [ref]$maxSize))) {
-        [System.Windows.MessageBox]::Show("文件大小格式错误，请输入有效的数字", "错误", "OK", "Error")
-        return
+    # 文件大小筛选
+    if ($minSizeBox.Text -and ([double]::TryParse($minSizeBox.Text, [ref]$minValue)))
+    {
+        $minBytes = Convert-ToBytes -value $minValue -unit $minSizeUnit.SelectedItem
+        $allData = $allData | Where-Object { $_.RawSize -ge $minBytes }
     }
 
-    # 转换大小单位（仅当启用了对应过滤时）
-    $minBytes = if ($useMinSize) { Convert-ToBytes $minSize $minSizeUnit.SelectedItem } else { 0 }
-    $maxBytes = if ($useMaxSize) { Convert-ToBytes $maxSize $maxSizeUnit.SelectedItem } else { [double]::MaxValue }
-    $searchText = $searchBox.Text.Trim()
-
-    $statusText.Text = "正在搜索... (共 $($script:allFiles.Count) 个文件)"
-    $window.Dispatcher.Invoke([Action]{
-        $results = Search-Files -searchText $searchText `
-                               -startDate $startDate `
-                               -endDate $endDate `
-                               -minSize $minBytes `
-                               -maxSize $maxBytes `
-                               -useMinSize $useMinSize `
-                               -useMaxSize $useMaxSize
-
-        $fileDataGrid.ItemsSource = $results
-        $statusText.Text = "搜索完成，找到 $($results.Count) 个文件"
-    }, [System.Windows.Threading.DispatcherPriority]::Background)
-})
-
-# 双击打开文件
-$fileDataGrid.Add_MouseDoubleClick({
-    if ($fileDataGrid.SelectedItem) {
-        $path = $fileDataGrid.SelectedItem.Path
-        if (Test-Path $path) {
-            Start-Process $path
-        }
-        else {
-            [System.Windows.MessageBox]::Show("文件不存在: $path", "错误", "OK", "Error")
-        }
+    if ($maxSizeBox.Text -and ([double]::TryParse($maxSizeBox.Text, [ref]$maxValue)))
+    {
+        $maxBytes = Convert-ToBytes -value $maxValue -unit $maxSizeUnit.SelectedItem
+        $allData = $allData | Where-Object { $_.RawSize -le $maxBytes }
     }
-})
 
-# 窗口关闭事件
-$window.Add_Closing({
-    if ($script:isScanning) {
-        Save-PartialCache | Out-Null
-        if ($script:scanTimer) {
-            $script:scanTimer.Stop()
-        }
-    }
-})
-
-# 加载缓存
-if (Test-Path $cacheFilePath) {
-    try {
-        $script:allFiles = Get-Content $cacheFilePath -Raw | ConvertFrom-Json
-        $script:currentFilesCount = $script:allFiles.Count
-        $fileCountText.Text = "已发现文件: $($script:currentFilesCount) (来自上次完整扫描)"
-        $scanInfoText.Text = "扫描状态: 可继续扫描"
-    }
-    catch {
-        Write-Error "加载缓存失败: $_"
-        Remove-Item $cacheFilePath -Force -ErrorAction SilentlyContinue
-    }
+    # 设置数据源
+    $fileDataGrid.ItemsSource = $allData
 }
+
+# 重置按钮事件
+$btnReset.Add_Click({
+    $searchBox.Text = ""
+    $startDateTimeBox.Text = (Get-Date).AddDays(-30).ToString("yyyy-MM-dd HH:mm:ss")
+    $endDateTimeBox.Text = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    $minSizeBox.Text = ""
+    $maxSizeBox.Text = ""
+    $minSizeUnit.SelectedItem = "KB"
+    $maxSizeUnit.SelectedItem = "MB"
+    Apply-Filters
+})
+
+# 查询按钮事件
+$btnQuery.Add_Click({ Apply-Filters })
+
+# 搜索框事件
+$searchBox.Add_TextChanged({ Apply-Filters })
+
+# 切换按钮事件
+$btnRecent.Add_Click({
+    $btnRecent.Style = $window.Resources["SelectedButtonStyle"]
+    $btnTempLogs.Style = $window.Resources["ButtonStyle"]
+    Apply-Filters
+})
+
+$btnTempLogs.Add_Click({
+    $btnTempLogs.Style = $window.Resources["SelectedButtonStyle"]
+    $btnRecent.Style = $window.Resources["ButtonStyle"]
+    Apply-Filters
+})
+
+# 刷新按钮事件
+$btnRefresh.Add_Click({ Apply-Filters })
+
+# 退出按钮事件
+$btnExit.Add_Click({ $window.Close() })
+
+# 双击表格行打开文件
+$fileDataGrid.Add_MouseDoubleClick({
+    if ($fileDataGrid.SelectedItem)
+    {
+        $path = $fileDataGrid.SelectedItem.Path
+        if (-not [string]::IsNullOrEmpty($path) -and (Test-Path -Path $path))
+        {
+            Start-Process -FilePath $path
+        }
+        else
+        {
+            [System.Windows.MessageBox]::Show("文件路径无效或不存在: $path", "错误", "OK", "Error")
+        }
+    }
+})
+
+# 单位选择框事件
+$minSizeUnit.Add_SelectionChanged({ Apply-Filters })
+$maxSizeUnit.Add_SelectionChanged({ Apply-Filters })
+
+# 初始加载最近文档
+Apply-Filters
 
 # 显示窗口
-if (-not ([System.Windows.Application]::Current)) {
+if (-not ([System.Windows.Application]::Current))
+{
     $app = New-Object System.Windows.Application
 }
-else {
+else
+{
     $app = [System.Windows.Application]::Current
 }
 $app.Run($window)
