@@ -9,7 +9,7 @@ RUN apk update && apk add --no-cache fontconfig ttf-dejavu
 # 下载特殊字体
 RUN apk add --no-cache curl tar
 # 安装jdk
-RUN curl -L http://172.16.0.227:84/jdk/Linux/OpenJDK25U-jdk_x64_linux_hotspot_25_36.tar.gz -o /tmp/jdk.tar.gz && \
+RUN curl -L http://172.16.0.227:84/jdk/Linux/OpenJDK25U-jdk_x64_alpine-linux_hotspot_25.0.1_8.tar.gz -o /tmp/jdk.tar.gz && \
     mkdir -p /opt/java && \
     tar -xzf /tmp/jdk.tar.gz -C /opt/java --strip-components=1 && \
     rm /tmp/jdk.tar.gz
