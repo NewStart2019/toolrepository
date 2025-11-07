@@ -19,6 +19,11 @@ services:
         gitlab_rails['db_port'] = 5432
         gitlab_rails['db_username'] = 'USERNAME'
         gitlab_rails['db_password'] = 'PASSWORD'
+        prometheus['listen_address'] = '0.0.0.0:9090'
+        # 设置数据保留时间为 15 天
+        prometheus['flags'] = {
+          'storage.tsdb.retention.time' => "15d"
+        }
       GITLAB_SKIP_UNMIGRATED_DATA_CHECK: 'true'
       TZ: "Asia/Shanghai"
     ports:
@@ -26,6 +31,7 @@ services:
       - '2224:22'
       - "5432:5432"
       - "8060:8060"
+      - "9090:9090"
     volumes:
       - '/app/gitlab/config:/etc/gitlab'
       - '/app/gitlab/logs:/var/log/gitlab'
