@@ -1,0 +1,61 @@
+FROM alpine:3.20
+
+# 设置阿里云镜像仓库
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+ENV TimeZone=Asia/Shanghai
+RUN ln -sf /usr/share/zoneinfo/$TimeZone /etc/localtime && echo $TimeZone > /etc/timezone
+# 安装jdk21
+RUN apk add --no-cache openjdk21
+# 安装必要的软件包以及依赖 字体
+RUN apk update && apk add --no-cache fontconfig ttf-dejavu
+# 下载特殊字体
+RUN apk add --no-cache curl
+RUN curl -o /usr/share/fonts/msyh.ttc http://172.16.0.227:84/fonts/msyh.ttc
+RUN curl -o /usr/share/fonts/msyhbd.ttc http://172.16.0.227:84/fonts/msyhbd.ttc
+RUN curl -o /usr/share/fonts/msyhl.ttc http://172.16.0.227:84/fonts/msyhl.ttc
+RUN curl -o /usr/share/fonts/simhei.ttf http://172.16.0.227:84/fonts/simhei.ttf
+RUN curl -o /usr/share/fonts/simsun.ttc http://172.16.0.227:84/fonts/simsun.ttc
+RUN curl -o /usr/share/fonts/stsong.ttf http://172.16.0.227:84/fonts/stsong.ttf
+RUN curl -o /usr/share/fonts/simsun.ttf http://172.16.0.227:84/fonts/simsun.ttf
+RUN curl -o /usr/share/fonts/times.ttf http://172.16.0.227:84/fonts/times.ttf
+RUN curl -o /usr/share/fonts/Times_New_Roman.ttf http://172.16.0.227:84/fonts/Times_New_Roman.ttf
+RUN curl -o /usr/share/fonts/timesbd.ttf http://172.16.0.227:84/fonts/timesbd.ttf
+RUN curl -o /usr/share/fonts/timesbi.ttf http://172.16.0.227:84/fonts/timesbi.ttf
+RUN curl -o /usr/share/fonts/timesi.ttf http://172.16.0.227:84/fonts/timesi.ttf
+RUN curl -o /usr/share/fonts/arial.ttf  http://172.16.0.227:84/fonts/ARIAL.TTF
+RUN curl -o /usr/share/fonts/ariali.ttf http://172.16.0.227:84/fonts/ARIALI.TTF
+RUN curl -o /usr/share/fonts/arialn.ttf http://172.16.0.227:84/fonts/ARIALN.TTF
+RUN curl -o /usr/share/fonts/arialbd.ttf http://172.16.0.227:84/fonts/ARIALBD.TTF
+RUN curl -o /usr/share/fonts/arialbi.ttf http://172.16.0.227:84/fonts/ARIALBI.TTF
+RUN curl -o /usr/share/fonts/arialnb.ttf http://172.16.0.227:84/fonts/ARIALNB.TTF
+RUN curl -o /usr/share/fonts/arialni.ttf http://172.16.0.227:84/fonts/ARIALNI.TTF
+RUN curl -o /usr/share/fonts/arialnbi.ttf http://172.16.0.227:84/fonts/ARIALNBI.TTF
+RUN curl -o /usr/share/fonts/arialuni.ttf http://172.16.0.227:84/fonts/ARIALUNI.TTF
+RUN curl -o /usr/share/fonts/arlrdbd.ttf http://172.16.0.227:84/fonts/ARLRDBD.TTF
+RUN curl -o /usr/share/fonts/ariblk.ttf http://172.16.0.227:84/fonts/ARIBLK.TTF
+RUN curl -o /usr/share/fonts/calist.ttf http://172.16.0.227:84/fonts/CALIST.TTF
+RUN curl -o /usr/share/fonts/calistb.ttf http://172.16.0.227:84/fonts/CALISTB.TTF
+RUN curl -o /usr/share/fonts/calistbi.ttf http://172.16.0.227:84/fonts/CALISTBI.TTF
+RUN curl -o /usr/share/fonts/calisti.ttf http://172.16.0.227:84/fonts/CALISTI.TTF
+RUN curl -o /usr/share/fonts/calif.ttf http://172.16.0.227:84/fonts/CALIF.TTF
+RUN curl -o /usr/share/fonts/califb.ttf http://172.16.0.227:84/fonts/CALIFB.TTF
+RUN curl -o /usr/share/fonts/califi.ttf http://172.16.0.227:84/fonts/CALIFI.TTF
+RUN curl -o /usr/share/fonts/califr.ttf http://172.16.0.227:84/fonts/CALIFR.TTF
+RUN curl -o /usr/share/fonts/calibri.ttf http://172.16.0.227:84/fonts/CALIBRI.TTF
+RUN curl -o /usr/share/fonts/calibriz.ttf http://172.16.0.227:84/fonts/CALIBRIZ.TTF
+RUN curl -o /usr/share/fonts/calibrib.ttf http://172.16.0.227:84/fonts/CALIBRIB.TTF
+RUN curl -o /usr/share/fonts/calibrii.ttf http://172.16.0.227:84/fonts/CALIBRII.TTF
+RUN curl -o /usr/share/fonts/calibril.ttf http://172.16.0.227:84/fonts/CALIBRIL.TTF
+RUN curl -o /usr/share/fonts/calibrili.ttf http://172.16.0.227:84/fonts/CALIBRILI.TTF
+
+RUN curl -o /usr/share/fonts/sjqy.ttf http://172.16.0.227:84/fonts/SJQY.ttf
+RUN curl -o /usr/share/fonts/sjqy1.ttf http://172.16.0.227:84/fonts/SJQY1.ttf
+RUN curl -o /usr/share/fonts/sjqy2.ttf http://172.16.0.227:84/fonts/SJQY2.ttf
+RUN curl -o /usr/share/fonts/sjqy3.ttf http://172.16.0.227:84/fonts/SJQY3.ttf
+RUN curl -o "/usr/share/fonts/wingdings 2.ttf" http://172.16.0.227:84/fonts/Wingdings%202.TTF
+
+RUN apk add tesseract-ocr
+
+RUN apk del curl
+# 删除缓存
+RUN rm -rf /var/cache/apk/* && rm -rf /tmp/*

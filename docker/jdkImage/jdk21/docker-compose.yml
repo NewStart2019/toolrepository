@@ -21,3 +21,10 @@ services:
     image: 172.16.0.197:8083/tool/alpine_jdk21_special-jdk21:1.4
     env_file:
       - .env
+  alpine_jdk21_special_ocr:
+    build:
+      context: .
+      dockerfile: Dockerfile-alphineBig-ocr
+    image: 172.16.0.197:8083/tool/alpine_jdk21_special_ocr_jdk21:1.0
+    env_file:
+      - .env

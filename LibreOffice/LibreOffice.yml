@@ -12,3 +12,28 @@ services:
       - extra_params="--o:ssl.enable=false"
     volumes:
       - /root/libreoffice/Documents:/opt/storage
+
+  # https://github.com/linuxserver/docker-libreoffice
+  libreofficeServer:
+    image: lscr.io/linuxserver/libreoffice:latest
+    container_name: libreofficeServer
+    restart: unless-stopped
+    network_mode: bridge
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Shanghai
+      - CUSTOM_USER=admin
+      - PASSWORD=admin123
+      - TITLE=重庆建设工程质量监督检测中心有限公司
+      # 允许用户设置其仪表盘。选项：selkies-dashboard、selkies-dashboard-zinc、selkies-dashboard-wish
+      - DASHBOARD=selkies-dashboard
+      # 文件上传下载路径
+      - FILE_MANAGER_PATH=/admin/uploads
+      - LC_ALL=zh_CN.UTF-8
+    volumes:
+      - ./config:/config
+    shm_size: "1gb"
