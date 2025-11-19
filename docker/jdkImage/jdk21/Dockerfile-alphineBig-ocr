@@ -37,7 +37,6 @@ RUN curl -o /usr/share/fonts/calist.ttf http://172.16.0.227:84/fonts/CALIST.TTF
 RUN curl -o /usr/share/fonts/calistb.ttf http://172.16.0.227:84/fonts/CALISTB.TTF
 RUN curl -o /usr/share/fonts/calistbi.ttf http://172.16.0.227:84/fonts/CALISTBI.TTF
 RUN curl -o /usr/share/fonts/calisti.ttf http://172.16.0.227:84/fonts/CALISTI.TTF
-RUN curl -o /usr/share/fonts/calif.ttf http://172.16.0.227:84/fonts/CALIF.TTF
 RUN curl -o /usr/share/fonts/califb.ttf http://172.16.0.227:84/fonts/CALIFB.TTF
 RUN curl -o /usr/share/fonts/califi.ttf http://172.16.0.227:84/fonts/CALIFI.TTF
 RUN curl -o /usr/share/fonts/califr.ttf http://172.16.0.227:84/fonts/CALIFR.TTF
@@ -55,6 +54,9 @@ RUN curl -o /usr/share/fonts/sjqy3.ttf http://172.16.0.227:84/fonts/SJQY3.ttf
 RUN curl -o "/usr/share/fonts/wingdings 2.ttf" http://172.16.0.227:84/fonts/Wingdings%202.TTF
 
 RUN apk add tesseract-ocr
+RUN apk add tesseract-ocr-data-eng tesseract-ocr-data-chi_sim
+# Alpine 中可选（如果安装了 fontconfig）
+RUN fc-cache -fv
 
 RUN apk del curl
 # 删除缓存

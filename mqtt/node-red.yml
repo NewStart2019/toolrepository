@@ -1,0 +1,13 @@
+name: node-red
+# 启动前先把 ./data 文件夹修改所属用户为：node-red
+#   sudo chown -R 1000:1000 ./data
+services:
+  node-red:
+    image: 172.16.0.197:8083/nodered/node-red:4.1.1-22
+    container_name: node-red
+    restart: unless-stopped
+    network_mode: bridge
+    ports:
+      - "1880:1880"
+    volumes:
+      - ./data:/data
