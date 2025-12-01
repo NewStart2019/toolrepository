@@ -6,4 +6,4 @@ services:
       dockerfile: Dockerfile-alphineBig
     env_file:
       - .env
-    image: 172.16.0.197:8083/tool/alpine_jdk25_special:1.2
+    image: 172.16.0.197:8083/tool/alpine_jdk25_special:1.3
