@@ -47,7 +47,7 @@ services:
       args:
         VERSION: 21
         GRADLE_VERSION: 8.12.1
-    image: 172.16.0.197:8083/tool/docker/gradle-21:1.5.3
+    image: 172.16.0.197:8083/tool/docker/gradle-21:1.5.4
   gradle25:
     build:
       context: .
@@ -56,5 +56,5 @@ services:
       args:
         VERSION: 25
         GRADLE_VERSION: 9.1.0
-    image: 172.16.0.197:8083/tool/docker/gradle-25:0.2
+    image: 172.16.0.197:8083/tool/docker/gradle-25:0.3
     container_name: test
