@@ -10,6 +10,7 @@ insecure = true
  ```
 ```shell
 docker run --privileged --rm tonistiigi/binfmt --install all 
-docker buildx create --name mybuilder --use --driver docker-container --bootstrap  --config ./buildkitd.toml 
-docker buildx bake -f docker-bake.hcl --push 
+docker buildx create --name mybuilder --use --driver docker-container --bootstrap  --config ./buildkitd.toml
+docker pull alpine:3.23.0
+docker buildx bake -f docker-bake.hcl --push
 ```
