@@ -1,0 +1,5 @@
+debug = true
+
+[registry."172.16.0.197:8083"]
+http = true
+insecure = true

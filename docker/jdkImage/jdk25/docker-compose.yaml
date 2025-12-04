@@ -1,4 +1,3 @@
-name: jdk25
 services:
   alpine_jdk25_special:
     build:

@@ -1,4 +1,4 @@
-version: '3'
+name: oceanbase
 services:
   oceanbase:
     image: oceanbase/oceanbase-ce:4.3.5-lts
@@ -13,5 +13,9 @@ services:
       - "2882:2882"
       # Web 控制台端口（OCP）
       - "2883:2883"
+      - "2886:2886"
     environment:
       - OB_SYS_PASSWORD=123456  # 与配置文件保持一致
+    volumes:
+      - $PWD/obd/cluster:/root/.obd/cluster
+      - $PWD/ob:/root/ob

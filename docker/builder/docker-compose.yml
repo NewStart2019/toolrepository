@@ -1,0 +1,13 @@
+name: buildkit
+services:
+  buildkit:
+    image: moby/buildkit:latest
+    container_name: mybuilder
+    privileged: true
+    command: ["--config", "/etc/buildkit/buildkitd.toml"]
+    volumes:
+      - ./buildkitd.toml:/etc/buildkit/buildkitd.toml
+    environment:
+      - BUILDKITD_FLAGS=--debug
+    #让 BuildKit 能访问 HTTP registry
+    network_mode: host
