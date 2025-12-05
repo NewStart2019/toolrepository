@@ -34,7 +34,8 @@ ENV PATH="/opt/gradle/bin:${PATH}"
 
 RUN apk cache clean
 COPY dockerDelete.sh /app/
+RUN dos2unix /app/dockerDelete.sh
 COPY SpringbootHealthCheck.sh /app/
-RUN sed -i 's/\r$//' /app/SpringbootHealthCheck.sh
+RUN dos2unix /app/SpringbootHealthCheck.sh
 RUN gradle --version
 RUN apk del --no-cache wget dos2unix

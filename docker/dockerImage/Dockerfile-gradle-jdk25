@@ -42,8 +42,9 @@ ENV PATH="/opt/gradle/bin:${PATH}"
 
 RUN apk cache clean
 COPY dockerDelete.sh /app/
+RUN dos2unix /app/dockerDelete.sh
 COPY SpringbootHealthCheck.sh /app/
-RUN sed -i 's/\r$//' /app/SpringbootHealthCheck.sh
+RUN dos2unix /app/SpringbootHealthCheck.sh
 
 # 验证安装 即使设置了 ENV PATH=...，在 RUN 命令中可能因为使用 /bin/sh 而不加载环境变量。
 # RUN source /etc/profile && java -version && gradle --version
