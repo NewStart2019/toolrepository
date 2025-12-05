@@ -1,36 +1,66 @@
-ARG BASE_IMAGE=ubuntu:jammy
-FROM ${BASE_IMAGE} AS builder
+# ============ 参数定义 ============
+ARG NGINX_VERSION=1.29.3
+# 最新的 nginx_upstream_check_module 对应的 patch（建议和 nginx 版本匹配）
+ARG UPSTREAM_CHECK_VERSION=0.4.0
+# 对应 patch 下载地址（淘宝的旧版 patch 已经失效，这里用社区维护的）
+ARG UPSTREAM_CHECK_PATCH=https://github.com/yaoweibin/nginx_upstream_check_module/archive/v${UPSTREAM_CHECK_VERSION}.tar.gz
 
-ARG NGINX_VERSION=1.26.1
-ENV DEBIAND_FRONTEND=noninteractive
+# ============ 基础构建阶段 ============
+FROM alpine:3.23.0 AS builder
 
-RUN apt-get update \
- && apt-get install -y wget build-essential libpcre3 libpcre3-dev zlib1g zlib1g-dev libssl-dev libgd-dev libxml2 libxml2-dev uuid-dev unzip
+ARG NGINX_VERSION
+ARG UPSTREAM_CHECK_PATCH
+ARG TARGETARCH
+ARG TARGETVARIANT
 
-RUN wget https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz \
- && tar xvfz nginx-$NGINX_VERSION.tar.gz \
- && rm -f nginx-$NGINX_VERSION.tar.get \
- && mv nginx-$NGINX_VERSION nginx \
- && wget -O nginx_upstream_check_module-master.zip  https://codeload.github.com/yaoweibin/nginx_upstream_check_module/zip/refs/heads/master \
- && unzip nginx_upstream_check_module-master.zip  \
- && mv nginx_upstream_check_module-master /nginx_upstream_check_module
+# 安装编译依赖
+RUN apk add --no-cache \
+    gcc \
+    libc-dev \
+    make \
+    openssl-dev \
+    pcre2-dev \
+    zlib-dev \
+    linux-headers \
+    curl \
+    gnupg \
+    libxslt-dev \
+    gd-dev \
+    geoip-dev \
+    perl-dev \
+    patch
 
-RUN cd /nginx \
- && patch -p1 < /nginx_upstream_check_module/check_1.20.1+.patch \
- && ./configure \
+WORKDIR /tmp
+
+# 下载 Nginx 源码
+RUN curl -L https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz | tar zx \
+    && cd nginx-${NGINX_VERSION}
+
+# 下载并解压 nginx_upstream_check_module patch
+RUN curl -L ${UPSTREAM_CHECK_PATCH} | tar zx \
+    && mv nginx_upstream_check_module-0.4.0 /tmp/nginx-${NGINX_VERSION}/nginx_upstream_check_module
+
+# 给 nginx 源码打 patch（不同的 nginx 版本 patch 方式略有差异，这里使用常用的 -p1）
+WORKDIR /tmp/nginx-${NGINX_VERSION}
+RUN patch -p1 < nginx_upstream_check_module/check_${UPSTREAM_CHECK_VERSION}.patch || \
+    patch -p0 < nginx_upstream_check_module/check_${UPSTREAM_CHECK_VERSION}.patch || \
+    echo "Patch already applied or version mismatch, continue..."
+
+# 配置编译参数（根据需要自行增删模块）
+RUN ./configure \
     --prefix=/etc/nginx \
     --sbin-path=/usr/sbin/nginx \
-    --modules-path=/etc/nginx/modules \
+    --modules-path=/usr/lib/nginx/modules \
     --conf-path=/etc/nginx/nginx.conf \
     --error-log-path=/var/log/nginx/error.log \
     --http-log-path=/var/log/nginx/access.log \
     --pid-path=/var/run/nginx.pid \
     --lock-path=/var/run/nginx.lock \
-    --http-client-body-temp-path=/tmp/nginx/client_temp \
-    --http-proxy-temp-path=/tmp/nginx/proxy_temp \
-    --http-fastcgi-temp-path=/tmp/nginx/fastcgi_temp \
-    --http-uwsgi-temp-path=/tmp/nginx/uwsgi_temp \
-    --http-scgi-temp-path=/tmp/nginx/scgi_temp \
+    --http-client-body-temp-path=/var/cache/nginx/client_temp \
+    --http-proxy-temp-path=/var/cache/nginx/proxy_temp \
+    --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp \
+    --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp \
+    --http-scgi-temp-path=/var/cache/nginx/scgi_temp \
     --user=nginx \
     --group=nginx \
     --with-compat \
@@ -58,56 +88,42 @@ RUN cd /nginx \
     --with-stream_realip_module \
     --with-stream_ssl_module \
     --with-stream_ssl_preread_module \
-    --with-cc-opt="-g -O2 -ffile-prefix-map=/data/builder/debuild/nginx-$NGINX_VERSION/debian/debuild-base/nginx-$NGINX_VERSION=. -fstack-protector-strong -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fPIC" \
-    --with-ld-opt="-Wl,-z,relro -Wl,-z,now -Wl,--as-needed -pie" \
-    --add-module=/nginx_upstream_check_module \
- && make \
- && make install
+    --add-module=nginx_upstream_check_module \
+    && make -j$(nproc) \
+    && make install
 
-FROM ${BASE_IMAGE}
+# ============ 最终运行镜像 ============
+FROM alpine:3.23.0
 
-RUN addgroup --gid 999 nginx \
- && adduser \
-    --uid 999 \
-    --gid 999 \
-    --no-create-home \
-    --shell /bin/bash \
-    --disabled-password \
-    --gecos "" \
-    --quiet \
-    nginx
+ARG NGINX_VERSION
 
+# 创建 nginx 用户
+RUN addgroup -S nginx && adduser -S -G nginx nginx
 
-RUN mkdir -p /usr/share/nginx
-
-COPY --from=builder --chown=nginx:nginx /etc/nginx /etc/nginx
+# 复制编译好的 nginx
 COPY --from=builder /usr/sbin/nginx /usr/sbin/nginx
-COPY --from=builder --chown=nginx:nginx /etc/nginx/html /usr/share/nginx/html
+COPY --from=builder /etc/nginx /etc/nginx
+#COPY --from=builder /usr/lib/nginx/modules /usr/lib/nginx/modules
 
-# COPY --chown=nginx:nginx nginx.conf /etc/nginx/
-# COPY --chown=nginx:nginx default.conf /etc/nginx/conf.d/
+# 必要的目录和权限
+RUN mkdir -p /var/cache/nginx \
+    && mkdir -p /var/log/nginx \
+    && mkdir -p /var/run \
+    && chown -R nginx:nginx /var/cache/nginx \
+    && chown -R nginx:nginx /var/log/nginx \
+    && ln -sf /dev/stdout /var/log/nginx/access.log \
+    && ln -sf /dev/stderr /var/log/nginx/error.log
 
-RUN mkdir -p /tmp/nginx \
- && chown nginx:nginx /tmp/nginx
+# 安装运行时依赖
+RUN apk add --no-cache \
+    pcre2 \
+    openssl \
+    ca-certificates
 
-RUN mkdir -p /etc/nginx/conf.d \
- && chown nginx:nginx /etc/nginx/conf.d
+EXPOSE 80 443
 
-RUN mkdir -p /var/log/nginx \
- && chown nginx:nginx /var/log/nginx
+STOPSIGNAL SIGQUIT
 
-RUN touch /var/log/nginx/access.log \
- && touch /var/log/nginx/error.log \
- && ln -sf /dev/stdout /var/log/nginx/access.log \
- && ln -sf /dev/stderr /var/log/nginx/error.log
+USER nginx
 
-RUN chown -R nginx:nginx /var/log/nginx
-
-RUN rm -f /etc/nginx/*.default \
- && rm -f /etc/nginx/*-utf \
- && rm -f /etc/nginx/*-win \
- && rm -rf /etc/nginx/html \
-
-RUN mkdir /app/
-
-ENTRYPOINT /usr/sbin/nginx -g 'daemon off;'
+CMD ["nginx", "-g", "daemon off;"]
