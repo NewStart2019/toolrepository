@@ -1,5 +1,5 @@
 # ============ 参数定义 ============
-ARG NGINX_VERSION=1.29.3
+ARG NGINX_VERSION=1.27.5
 # 最新的 nginx_upstream_check_module 对应的 patch（建议和 nginx 版本匹配）
 ARG UPSTREAM_CHECK_VERSION=0.4.0
 # 对应 patch 下载地址（淘宝的旧版 patch 已经失效，这里用社区维护的）
@@ -42,12 +42,11 @@ RUN curl -L ${UPSTREAM_CHECK_PATCH} | tar zx \
 
 # 给 nginx 源码打 patch（不同的 nginx 版本 patch 方式略有差异，这里使用常用的 -p1）
 WORKDIR /tmp/nginx-${NGINX_VERSION}
-RUN patch -p1 < nginx_upstream_check_module/check_${UPSTREAM_CHECK_VERSION}.patch || \
-    patch -p0 < nginx_upstream_check_module/check_${UPSTREAM_CHECK_VERSION}.patch || \
-    echo "Patch already applied or version mismatch, continue..."
+RUN patch -p1 < nginx_upstream_check_module/check_1.20.1+.patch
 
 # 配置编译参数（根据需要自行增删模块）
-RUN ./configure \
+# unterminated-string-initialization 关闭 GCC 15 的 QUIC 字符串警告（双保险）
+RUN CFLAGS="-Wno-error=unterminated-string-initialization" ./configure \
     --prefix=/etc/nginx \
     --sbin-path=/usr/sbin/nginx \
     --modules-path=/usr/lib/nginx/modules \
@@ -101,6 +100,7 @@ ARG NGINX_VERSION
 RUN addgroup -S nginx && adduser -S -G nginx nginx
 
 # 复制编译好的 nginx
+COPY --from=builder --chown=nginx:nginx /etc/nginx/html /usr/share/nginx/html
 COPY --from=builder /usr/sbin/nginx /usr/sbin/nginx
 COPY --from=builder /etc/nginx /etc/nginx
 #COPY --from=builder /usr/lib/nginx/modules /usr/lib/nginx/modules
