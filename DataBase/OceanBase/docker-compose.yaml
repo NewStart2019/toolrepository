@@ -15,7 +15,37 @@ services:
       - "2883:2883"
       - "2886:2886"
     environment:
-      - OB_SYS_PASSWORD=123456  # 与配置文件保持一致
+      - TZ="Asia/Shanghai"
+      # 设置 MySQL 租户的默认时区
+      - OB_MYSQL_TZ="+08:00"
+      - OB_SYS_PASSWORD=vaRcCSYan6VUfeAvUH3h  # 与配置文件保持一致
+      - OB_TENANT_PASSWORD=vaRcCSYan6VUfeAvUH3h # test租户 root 密码
+      - OB_MEMORY_LIMIT=12G
+      - OB_DATAFILE_SIZE=1024G
+      - OB_LOG_DISK_SIZE=36G
+      # mini 默认最小模式，normal利用容器的全部资源，slim fastboot 模式，
+      - MODE=normal
     volumes:
       - $PWD/obd/cluster:/root/.obd/cluster
       - $PWD/ob:/root/ob
+
+#isula run -d \
+#  --name oceanbase \
+#  --restart always \
+#  --privileged \
+#  --net bridge \
+#  -p 2881:2881 \
+#  -p 2882:2882 \
+#  -p 2883:2883 \
+#  -p 2886:2886 \
+#  -e TZ=Asia/Shanghai \
+#  -e OB_MYSQL_TZ=+08:00 \
+#  -e OB_SYS_PASSWORD=vaRcCSYan6VUfeAvUH3h \
+#  -e OB_TENANT_PASSWORD=vaRcCSYan6VUfeAvUH3h \
+#  -e OB_MEMORY_LIMIT=12G \
+#  -e OB_DATAFILE_SIZE=1024G \
+#  -e OB_LOG_DISK_SIZE=36G \
+#  -e MODE=normal \
+#  -v $(pwd)/obd/cluster:/root/.obd/cluster \
+#  -v $(pwd)/ob:/root/ob \
+#  oceanbase/oceanbase-ce:4.3.5-lts

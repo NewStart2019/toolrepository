@@ -1,0 +1,68 @@
+{
+  "group": "isula",
+  "graph": "/app/isulad/lib",
+  "state": "/app/isulad/run",
+  "log-level": "ERROR",
+  "pidfile": "/var/run/isulad.pid",
+  "log-opts": {
+    "log-file-mode": "0600",
+    "log-path": "/app/isulad/log",
+    "max-file": "1",
+    "max-size": "30KB"
+  },
+  "log-driver": "stdout",
+  "container-log": {
+    "driver": "json-file"
+  },
+  "hook-spec": "/etc/default/isulad/hooks/default.json",
+  "start-timeout": "2m",
+  "storage-driver": "overlay2",
+  "storage-opts": [
+    "overlay2.override_kernel_check=true"
+  ],
+  "default-registry": "mirror.ccs.tencentyun.com",
+  "registry-mirrors": [
+    "https://mirror.ccs.tencentyun.com",
+    "https://docker.mirrors.ustc.edu.cn",
+    "https://docker.m.daocloud.io",
+    "http://172.16.0.197:8083/",
+    "http://172.16.0.197:8929/"
+  ],
+  "insecure-registries": [
+    "172.16.0.197:8083",
+    "172.16.0.197:8929",
+    "mirror.ccs.tencentyun.com",
+    "docker.mirrors.ustc.edu.cn",
+    "docker.mirrors.ustc.edu.cn"
+  ],
+  "disable-default-mounts": false,
+  "pod-sandbox-image": "registry.aliyuncs.com/google_containers/pause:3.9",
+  "native.umask": "normal",
+  "network-plugin": "cni",
+  "cni-bin-dir": "/usr/libexec/cni",
+  "cni-conf-dir": "/etc/cni/net.d",
+  "image-layer-check": false,
+  "use-decrypted-key": true,
+  "insecure-skip-verify-enforce": false,
+  "enable-cri-v1": true,
+  "cgroup-driver": "cgroupfs",
+  "default-runtime": "runc",
+  "runtimes": {
+    "runc": {
+      "path": "/usr/bin/runc"
+    }
+  },
+
+  "hosts": [
+    "unix:///var/run/isulad.sock"
+  ],
+  "cri_config": {
+    "enable": true,
+    "listen": "/var/run/isulad.sock",
+    "stream_listen": "127.0.0.1:10010",
+    "runtime_root": "/app/isulad/runtime-root",
+    "cri-runtimes": {
+      "kata": "io.containerd.kata.v2"
+    }
+  }
+}
