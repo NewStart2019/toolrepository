@@ -27,17 +27,17 @@
   urls.forEach((fullUrl, index) => {
     try {
       const urlObj = new URL(fullUrl);
-      const protocol = urlObj.protocol.replace(':', '');
-      const host = urlObj.hostname;
-      const port = urlObj.port || (protocol === 'https' ? '443' : '80');
+      // const protocol = urlObj.protocol.replace(':', '');
+      // const host = urlObj.hostname;
+      // const port = urlObj.port || (protocol === 'https' ? '443' : '80');
       const pathWithQuery = urlObj.pathname + (urlObj.search || '');
 
       xmlOutput += `
   <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="${urlObj.pathname}" enabled="true">
     <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" enabled="true"/>
-    <stringProp name="HTTPSampler.domain">${escapeXml(host)}</stringProp>
-    <stringProp name="HTTPSampler.port">${port}</stringProp>
-    <stringProp name="HTTPSampler.protocol">${protocol}</stringProp>
+    <stringProp name="HTTPSampler.domain"></stringProp>
+    <stringProp name="HTTPSampler.port"></stringProp>
+    <stringProp name="HTTPSampler.protocol"></stringProp>
     <stringProp name="HTTPSampler.path">${escapeXml(pathWithQuery)}</stringProp>
     <stringProp name="HTTPSampler.method">GET</stringProp>
     <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
