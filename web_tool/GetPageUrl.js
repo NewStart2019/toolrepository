@@ -1,3 +1,4 @@
+// 获取所有请求为 jmeter的 http请求url的 xml配置
 (function () {
   // 1. 提取所有资源 URL（去重）
   const entries = performance.getEntriesByType("resource");
