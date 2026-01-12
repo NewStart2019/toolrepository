@@ -1,15 +1,28 @@
 name: kkfileview
 services:
   kkfileview:
-    image: keking/kkfileview:4.1.0
+    build:
+      context: .
+      dockerfile: Dockerfile-new
+    image: zqh2021/kkfileview:4.4.0
     container_name: kkfileview
     restart: unless-stopped
     network_mode: bridge
     ports:
       - 8012:8012
     environment:
-      - KK_FILE_UPLOAD_ENABLED=true
-      - KK_OFFICE_PREVIEW_TYPE=pdf
-      - KK_OFFICE_PREVIEW_SWITCH_DISABLED=true
+      - TZ=Asia/Shanghai
+      #      - KK_OFFICE_PREVIEW_TYPE=pdf
+      #      - KK_OFFICE_PREVIEW_SWITCH_DISABLED=true
+      - KK_FILE_UPLOAD_DISABLE=false
+      - KK_PROHIBIT="exe,dll,dat,sh,bat"
+      - INDEX_SHOW=true
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
 
-# 说明： KK_FILE_UPLOAD_ENABLED 把首页的文件上传功能关闭了
+# 说明： KK_FILE_UPLOAD_DISABLE 把首页的文件上传功能关闭了
+#  KK_FILE_UPLOAD_DISABLE 是否禁用首页文件上传
+#  KK_PROHIBIT 禁止上传类型
+#  INDEX_SHOW 是否限制说明文档
