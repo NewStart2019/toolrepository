@@ -14,8 +14,8 @@ target "base" {
   context    = "."
   dockerfile = "Dockerfile-alphine"
   tags = [
-    "zqh2021/alpine-jdk21:1.0",
-    "172.16.0.197:8083/zqh2021/alpine-jdk21:1.0"
+    "zqh2021/alpine_jdk21:1.0",
+    "172.16.0.197:8083/zqh2021/alpine_jdk21:1.0"
   ]
   # 该配置表示构建后直接推送到 registry，不会加载到本地 Docker。
   # 本地测试：output = ["type=oci,dest=image.tar"]  # 导出为 OCI tar
@@ -31,8 +31,8 @@ target "jdk21" {
   context    = "."
   dockerfile = "Dockerfile-alphineBig"
   tags = [
-    "zqh2021/alpine_jdk21_special_ocr_jdk21:1.4",
-    "172.16.0.197:8083/zqh2021/alpine_jdk21_special_ocr_jdk21:1.4"
+    "zqh2021/alpine_jdk21_special:1.4",
+    "172.16.0.197:8083/zqh2021/alpine_jdk21_special:1.4"
   ]
   # 该配置表示构建后直接推送到 registry，不会加载到本地 Docker。
   # 本地测试：output = ["type=oci,dest=image.tar"]  # 导出为 OCI tar
@@ -48,8 +48,8 @@ target "jdk21-ocr" {
   context    = "."
   dockerfile = "Dockerfile-alphineBig-ocr"
   tags = [
-    "zqh2021/alpine_jdk21_special_ocr_jdk21:1.4",
-    "172.16.0.197:8083/zqh2021/alpine_jdk21_special_ocr_jdk21:1.4"
+    "zqh2021/alpine_jdk21_special_ocr:1.4",
+    "172.16.0.197:8083/zqh2021/alpine_jdk21_special_ocr:1.4"
   ]
   # 该配置表示构建后直接推送到 registry，不会加载到本地 Docker。
   # 本地测试：output = ["type=oci,dest=image.tar"]  # 导出为 OCI tar

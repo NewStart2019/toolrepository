@@ -4,27 +4,27 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: 172.16.0.197:8083/tool/jdk21:1.4
+    image: 172.16.0.197:8083/zqh2021/jdk21:1.4
     env_file:
       - .env
   alpine_jdk21:
     build:
       context: .
       dockerfile: Dockerfile-alphine
-    image: 172.16.0.197:8083/tool/alpine-jdk21:1.0
+    image: 172.16.0.197:8083/zqh2021/alpine_jdk21:1.0
     env_file:
       - .env
   alpine_jdk21_special:
     build:
       context: .
       dockerfile: Dockerfile-alphineBig
-    image: 172.16.0.197:8083/tool/alpine_jdk21_special-jdk21:1.4
+    image: 172.16.0.197:8083/zqh2021/alpine_jdk21_special:1.4
     env_file:
       - .env
   alpine_jdk21_special_ocr:
     build:
       context: .
       dockerfile: Dockerfile-alphineBig-ocr
-    image: 172.16.0.197:8083/tool/alpine_jdk21_special_ocr_jdk21:1.4
+    image: 172.16.0.197:8083/zqh2021/alpine_jdk21_special_ocr:1.4
     env_file:
       - .env
