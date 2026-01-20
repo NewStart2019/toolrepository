@@ -17,7 +17,7 @@ RUN apk add --no-cache curl tar
 #ENV PATH=$JAVA_HOME/bin:$PATH
 
 # 命令安装
-RUN apk add --no-cache openjdk25
+RUN apk add --no-cache openjdk25-jre
 
 RUN curl -o /usr/share/fonts/msyh.ttc http://172.16.0.227:84/fonts/msyh.ttc
 RUN curl -o /usr/share/fonts/msyhbd.ttc http://172.16.0.227:84/fonts/msyhbd.ttc

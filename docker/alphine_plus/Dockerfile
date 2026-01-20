@@ -1,5 +1,5 @@
 FROM alpine:3
-MAINTAINER ee900222 [email protected]
+MAINTAINER zqh
 
 # install sshpass
 ADD ./download.sh /run/

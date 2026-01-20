@@ -20,11 +20,12 @@ services:
       - OB_MYSQL_TZ="+08:00"
       - OB_SYS_PASSWORD=vaRcCSYan6VUfeAvUH3h  # 与配置文件保持一致
       - OB_TENANT_PASSWORD=vaRcCSYan6VUfeAvUH3h # test租户 root 密码
-      - OB_MEMORY_LIMIT=12G
-      - OB_DATAFILE_SIZE=1024G
-      - OB_LOG_DISK_SIZE=36G
+      - OB_MEMORY_LIMIT=4G
+      - OB_DATAFILE_SIZE=10GB
+      - OB_LOG_DISK_SIZE=12G
       # mini 默认最小模式，normal利用容器的全部资源，slim fastboot 模式，
       - MODE=normal
+      - OB_SCENARIO=htap
     volumes:
       - $PWD/obd/cluster:/root/.obd/cluster
       - $PWD/ob:/root/ob
