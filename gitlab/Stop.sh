@@ -1,0 +1,1 @@
+export condition=true; while $condition; do sleep 1 ; done;

@@ -1,0 +1,14 @@
+name: ubuntu_ssh
+services:
+  ubuntu_ssh:
+    image: 172.16.0.197:8083/zqh2021/ubuntu_ssh:26.04
+    network_mode: bridge
+    ports:
+      - "22:22"
+  ubuntu_ssh_nvm:
+    image: 172.16.0.197:8083/zqh2021/ubuntu_ssh_nvm:26.04
+    network_mode: bridge
+    ports:
+      - "22:22"
+    volumes:
+      - ./app:/app/

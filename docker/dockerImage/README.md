@@ -1,4 +1,7 @@
-镜像说明文件：
+# 使用场景
+用于运行gitlab runner自动化部署的docker执行器
+
+# 镜像说明文件：
  构建镜像命令：docker-compose build -f /path/to/Dockerfile <service-name1> <service-name2>
 
 # 1、maven镜像
