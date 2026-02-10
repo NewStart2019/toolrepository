@@ -8,8 +8,9 @@ USER=$3
 TARGET_SERVER=$4
 PASSWORD=$5
 ROOT_PATH=$6
-DELETE_ZIP_FILE=$7
-APK_NAME=$8
+DELETE_ZIP_FILE=${7:-true}
+APK_NAME=${8:-""}
+TARGET_PORT=${9:-22}
 
 set -euo pipefail
 
@@ -55,8 +56,8 @@ function upload() {
     ARCHIVE="dist_${DATE}.tar.gz"
     cd $WORK_DIR
     tar -czf "$ARCHIVE" $ZIP_DIR
-    sshpass -p $PASSWORD ssh $USER@$TARGET_SERVER "if [ ! -d "$ROOT_PATH/dist" ]; then mkdir -p $ROOT_PATH; fi;"
-    sshpass -p $PASSWORD scp -rp "$ARCHIVE" $USER@$TARGET_SERVER:$ROOT_PATH
+    sshpass -p "$PASSWORD" ssh -p $TARGET_PORT $USER@$TARGET_SERVER "if [ ! -d '$ROOT_PATH/dist' ]; then mkdir -p '$ROOT_PATH/dist'; fi"
+    sshpass -p "$PASSWORD" scp -rp "$ARCHIVE" $USER@$TARGET_SERVER:$ROOT_PATH
     commandStr="cd $ROOT_PATH;
       rm -rf ./dist_new;
       mkdir -p ./dist_new;
@@ -64,7 +65,7 @@ function upload() {
     if [ $DELETE_ZIP_FILE ]; then
       commandStr="$commandStr && rm $ARCHIVE";
     fi
-    sshpass -p "$PASSWORD" ssh $USER@$TARGET_SERVER "$commandStr";
+    sshpass -p "$PASSWORD" ssh -p $TARGET_PORT $USER@$TARGET_SERVER "$commandStr";
 }
 
 param_check

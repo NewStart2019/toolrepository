@@ -48,7 +48,7 @@ target "ubuntu_ssh_nvm" {
   ]
   args = {
     UBUNTU_VERSION = "26.04",
-    PASSWORD       = "xxxx"
+    PASSWORD       = "123456"
   }
   secret = [
     # 来源：本地文件 .rootpw

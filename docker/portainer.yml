@@ -1,0 +1,9 @@
+name: portainer
+services:
+  portainer:
+    image: proxy.vvvv.ee/portainer/portainer-ce:latest
+    ports:
+      - 9004:9000
+    volumes:
+      - ./data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
