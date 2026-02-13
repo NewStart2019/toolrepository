@@ -1,0 +1,13 @@
+name: databasus
+services:
+  databasus:
+    container_name: databasus
+    image: databasus/databasus:latest
+    ports:
+      - "4005:4005"
+    volumes:
+      - ./databasus-data:/databasus-data
+    restart: unless-stopped
+
+# readme
+#   databasus 工具是 全量 备份，有界面管理，适合于mysql、maridb、postgresql、mongodb数据库
