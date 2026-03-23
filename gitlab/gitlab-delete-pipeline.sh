@@ -1,39 +1,37 @@
 #!/bin/bash
 
+#!/usr/bin/env bash
+set -euo pipefail
 
-# GitLab Personal Access Token
-personal_access_token=glpat-wQcDqYDZeDVnRxr6cXZh
-# GitLab API Endpoint
-api_endpoint=http://172.16.0.145:8929//api/v4/projects
-# Project ID
-project_id=$1
-# 项目状态可以从 CI/CD → Pipeline 的搜索框查看
-pipeline_status=$2
+GITLAB_URL="http://172.16.0.197:8929"\
+# 注意过期时间是 2027-03-02
+TOKEN="glpat-8SYjaMI8Ezd7o2mi50YZH286MQp1OjIH.01.0w0r79pq1"
+PROJECT_ID="74"
+PER_PAGE=15
 
-if [ -z "$project_id" ]; then
-  echo "请指定gitlab项目id，在项目目录下面的/Settings/General查看Project ID"
-  exit 1
-fi
+echo "将保留项目 $PROJECT_ID 中最近更新的 $PER_PAGE 条 pipeline，其余删除"
 
-if [ -z "$pipeline_status" ]; then
-  echo "请指定pipeline_status，可以指定的值有：success、skipped、canceled、created、failed、manual、pending、skipped"
-  exit 1
-fi
-# 字符串数组
-statuses=("success" "skipped" "canceled" "created" "failed" "manual" "pending" "skipped")
-# 判断传入的参数是否在数组中
-# shellcheck disable=SC2199
-# shellcheck disable=SC2076
-if ! [[  " ${statuses[@]} " =~ " ${pipeline_status} " ]]; then
-  echo "状态参数错误，可以指定的值：success、skipped、canceled、created、failed、manual、pending、skipped"
-  exit 1
-fi
+# 保留的页数
+PAGE=2
+while true; do
+  pipelines=$(curl -s --header "PRIVATE-TOKEN: $TOKEN" \
+    "${GITLAB_URL}/api/v4/projects/${PROJECT_ID}/pipelines?per_page=${PER_PAGE}&page=${PAGE}&order_by=updated_at&sort=desc")
 
-# Get list of pipelines for project : 分页参数per_page=100。分页最大只能100
-pipelines=$(curl --silent --header "Authorization: Bearer ${personal_access_token}" "${api_endpoint}/${project_id}/pipelines?per_page=100&status=${pipeline_status}" | jq '.[] .id')
-echo "$pipelines"
-# Loop through pipeline IDs and delete them
-for pipeline in $pipelines
-do
-  curl --request DELETE --header "Authorization: Bearer ${personal_access_token}" "${api_endpoint}/${project_id}/pipelines/${pipeline}"
+  if [ "$(echo "$pipelines" | jq 'length')" -eq 0 ]; then
+    echo "没有更多 pipeline 需要删除"
+    break
+  fi
+
+  ids=$(echo "$pipelines" | jq -r '.[].id')
+
+  for id in $ids; do
+    echo "正在删除 pipeline $id"
+    curl -s -X DELETE --header "PRIVATE-TOKEN: $TOKEN" \
+      "$GITLAB_URL/api/v4/projects/$PROJECT_ID/pipelines/$id" >/dev/null || echo "删除 $id 失败（可能已被删）"
+  done
+
+#  ((PAGE++))
+  sleep 0.3  # 防限速
 done
+
+echo "操作完成"

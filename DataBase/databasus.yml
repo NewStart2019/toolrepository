@@ -2,12 +2,14 @@ name: databasus
 services:
   databasus:
     container_name: databasus
-    image: databasus/databasus:latest
+    image: proxy.vvvv.ee/databasus/databasus:v3.16.4
     ports:
       - "4005:4005"
+      - "5437:5437"
     volumes:
       - ./databasus-data:/databasus-data
     restart: unless-stopped
 
 # readme
 #   databasus 工具是 全量 备份，有界面管理，适合于mysql、maridb、postgresql、mongodb数据库
+# 系统数据库连接信息：postgres://postgres:Q1234567@localhost:5437/databasus?sslmode=disable
