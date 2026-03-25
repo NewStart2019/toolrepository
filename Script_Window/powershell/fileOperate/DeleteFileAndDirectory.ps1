@@ -56,7 +56,7 @@ function Remove-EmptyFolders
     }
 }
 
-function Add-FileSuffix
+function Add-Filextension
 {
     <#
     .SYNOPSIS
@@ -199,5 +199,296 @@ function Add-FileSuffix
     if (-not $Force)
     {
         Write-Host "  (提示: 使用 -Force 可强制给已有后缀的文件再次添加)"
+    }
+}
+
+function Remove-FileExtension
+{
+    <#
+    .SYNOPSIS
+        批量删除文件扩展名（后缀）
+
+    .DESCRIPTION
+        - 不指定 -Extension 时，删除所有文件的扩展名（.xxx）
+        - 指定 -Extension 时，只删除匹配该扩展名的文件（支持 *.txt、.txt 或 txt 三种写法）
+
+    .PARAMETER Path
+        必传，目标文件夹路径
+
+    .PARAMETER Extension
+        可选，要删除的扩展名（不带点也可以）
+
+    .PARAMETER Recurse
+        是否递归子文件夹
+
+    .PARAMETER Preview
+        只预览要修改的文件，不实际执行重命名
+    #>
+
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true, Position = 0)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $false)]
+        [string]$Extension,
+
+        [switch]$Recurse,
+
+        [switch]$Preview
+    )
+
+    # 规范化路径
+    $Path = Resolve-Path $Path -ErrorAction Stop
+
+    # 构建 Get-ChildItem 参数
+    $gciParams = @{
+        Path = $Path
+        File = $true
+    }
+    if ($Recurse)
+    {
+        $gciParams.Recurse = $true
+    }
+
+    $files = Get-ChildItem @gciParams
+
+    foreach ($file in $files)
+    {
+        $oldName = $file.Name
+        $newName = $file.Name
+
+        if (-not $Extension)
+        {
+            # 不指定扩展名时，删除所有扩展名
+            $newName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
+        }
+        else
+        {
+            # 规范化扩展名（支持带点或不带点）
+            $ext = $Extension.TrimStart('.').ToLower()
+            if ($ext)
+            {
+                $ext = ".$ext"
+            }
+
+            if ($file.Extension -eq $ext)
+            {
+                $newName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
+            }
+        }
+
+        # 如果名称没变，跳过
+        if ($newName -eq $oldName)
+        {
+            continue
+        }
+
+        $newFullPath = Join-Path $file.DirectoryName $newName
+
+        if ($Preview)
+        {
+            Write-Host "预览: $( $file.FullName )  -->  $newFullPath" -ForegroundColor Cyan
+        }
+        else
+        {
+            try
+            {
+                Rename-Item -Path $file.FullName -NewName $newName -ErrorAction Stop
+                Write-Host "已处理: $oldName  -->  $newName" -ForegroundColor Green
+            }
+            catch
+            {
+                Write-Host "失败: $oldName - $( $_.Exception.Message )" -ForegroundColor Red
+            }
+        }
+    }
+}
+
+function Remove-FileNameSuffix
+{
+    <#
+    .SYNOPSIS
+        批量删除文件名末尾指定的字符串后缀（不包含扩展名）
+
+    .EXAMPLE
+        Remove-FileNameSuffix -Path "D:\test" -Suffix "_backup" -Recurse
+    #>
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true, Position = 0)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $true, Position = 1)]
+        [string]$Suffix,
+
+        [switch]$Recurse,
+
+        [switch]$Preview
+    )
+
+    $Path = Resolve-Path $Path -ErrorAction Stop
+
+    $gciParams = @{ Path = $Path; File = $true }
+    if ($Recurse)
+    {
+        $gciParams.Recurse = $true
+    }
+
+    Get-ChildItem @gciParams | ForEach-Object {
+        $file = $_
+        $baseName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
+        $extension = $file.Extension
+
+        if ( $baseName.EndsWith($Suffix, [StringComparison]::OrdinalIgnoreCase))
+        {
+            $newBaseName = $baseName.Substring(0, $baseName.Length - $Suffix.Length)
+            $newName = $newBaseName + $extension
+
+            $newFullPath = Join-Path $file.DirectoryName $newName
+
+            if ($Preview)
+            {
+                Write-Host "预览: $( $file.Name )  -->  $newName" -ForegroundColor Cyan
+            }
+            else
+            {
+                try
+                {
+                    Rename-Item -LiteralPath $file.FullName -NewName $newName -ErrorAction Stop
+                    Write-Host "已处理: $( $file.Name )  -->  $newName" -ForegroundColor Green
+                }
+                catch
+                {
+                    Write-Host "失败: $( $file.Name ) - $( $_.Exception.Message )" -ForegroundColor Red
+                }
+            }
+        }
+    }
+}
+
+
+function Add-FileNamePrefix
+{
+    <#
+    .SYNOPSIS
+        批量给文件名添加前缀（如果已存在该前缀则不重复添加）
+
+    .EXAMPLE
+        Add-FileNamePrefix -Path "D:\photos" -Prefix "2026_" -Recurse
+    #>
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Prefix,
+
+        [switch]$Recurse,
+
+        [switch]$Preview
+    )
+
+    $Path = Resolve-Path $Path -ErrorAction Stop
+
+    $gciParams = @{ Path = $Path; File = $true }
+    if ($Recurse)
+    {
+        $gciParams.Recurse = $true
+    }
+
+    Get-ChildItem @gciParams | ForEach-Object {
+        $file = $_
+        $baseName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
+        $extension = $file.Extension
+
+        # 如果文件名已经以该前缀开头（不区分大小写），则跳过
+        if ( $baseName.StartsWith($Prefix, [StringComparison]::OrdinalIgnoreCase))
+        {
+            return
+        }
+
+        $newBaseName = $Prefix + $baseName
+        $newName = $newBaseName + $extension
+
+        $newFullPath = Join-Path $file.DirectoryName $newName
+
+        if ($Preview)
+        {
+            Write-Host "预览: $( $file.Name )  -->  $newName" -ForegroundColor Cyan
+        }
+        else
+        {
+            try
+            {
+                Rename-Item -LiteralPath $file.FullName -NewName $newName -ErrorAction Stop
+                Write-Host "已添加前缀: $newName" -ForegroundColor Green
+            }
+            catch
+            {
+                Write-Host "失败: $( $file.Name ) - $( $_.Exception.Message )" -ForegroundColor Red
+            }
+        }
+    }
+}
+
+function Remove-FileNamePrefix
+{
+    <#
+    .SYNOPSIS
+        批量删除文件名前缀
+
+    .EXAMPLE
+        Remove-FileNamePrefix -Path "D:\test" -Prefix "2026_" -Recurse
+    #>
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Prefix,
+
+        [switch]$Recurse,
+
+        [switch]$Preview
+    )
+
+    $Path = Resolve-Path $Path -ErrorAction Stop
+
+    $gciParams = @{ Path = $Path; File = $true }
+    if ($Recurse)
+    {
+        $gciParams.Recurse = $true
+    }
+
+    Get-ChildItem @gciParams | ForEach-Object {
+        $file = $_
+        $baseName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
+        $extension = $file.Extension
+
+        if ( $baseName.StartsWith($Prefix, [StringComparison]::OrdinalIgnoreCase))
+        {
+            $newBaseName = $baseName.Substring($Prefix.Length)
+            $newName = $newBaseName + $extension
+
+            if ($Preview)
+            {
+                Write-Host "预览: $( $file.Name )  -->  $newName" -ForegroundColor Cyan
+            }
+            else
+            {
+                try
+                {
+                    Rename-Item -LiteralPath $file.FullName -NewName $newName -ErrorAction Stop
+                    Write-Host "已移除前缀: $newName" -ForegroundColor Green
+                }
+                catch
+                {
+                    Write-Host "失败: $( $file.Name ) - $( $_.Exception.Message )" -ForegroundColor Red
+                }
+            }
+        }
     }
 }
