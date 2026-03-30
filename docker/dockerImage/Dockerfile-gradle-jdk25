@@ -1,4 +1,5 @@
-FROM docker:git
+ARG DOCKER_VERSION="29.3.1-dind-alpine3.23"
+FROM docker:${DOCKER_VERSION}
 LABEL org.opencontainers.image.authors="zqh"
 ARG VERSION=11
 ARG GRADLE_VERSION=7.6
@@ -8,14 +9,9 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 # 下载工具
 RUN apk update && apk add --no-cache curl tar
 # 安装jdk
-RUN curl -L http://172.16.0.227:84/jdk/Linux/OpenJDK25U-jdk_x64_alpine-linux_hotspot_25.0.1_8.tar.gz -o /tmp/jdk.tar.gz && \
-    mkdir -p /opt/java && \
-    tar -xzf /tmp/jdk.tar.gz -C /opt/java --strip-components=1 && \
-    rm /tmp/jdk.tar.gz
-
-ENV JAVA_HOME=/opt/java
-ENV PATH=$JAVA_HOME/bin:$PATH
-
+# 安装jdk
+RUN apk add openjdk$VERSION
+RUN apk add --no-cache git
 # 安装sshpass
 RUN apk add sshpass
 
@@ -40,7 +36,6 @@ RUN curl http://172.16.0.227:84/gradle/gradle-${GRADLE_VERSION}-bin.zip -o /tmp/
 
 ENV PATH="/opt/gradle/bin:${PATH}"
 
-RUN apk cache clean
 COPY dockerDelete.sh /app/
 RUN dos2unix /app/dockerDelete.sh
 COPY SpringbootHealthCheck.sh /app/
@@ -50,3 +45,5 @@ RUN dos2unix /app/SpringbootHealthCheck.sh
 # RUN source /etc/profile && java -version && gradle --version
 
 RUN apk del --no-cache wget dos2unix
+
+RUN apk cache clean
