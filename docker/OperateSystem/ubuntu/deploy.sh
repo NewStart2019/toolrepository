@@ -51,6 +51,17 @@ function param_check() {
   fi
 }
 
+function delte_dist() {
+    # 检查 APK_NAME 变量是否为空
+    if [ -z "$APK_NAME" ]; then
+        # 如果为空，则删除 dist 目录下的所有内容
+        find ./dist -mindepth 1 -delete
+    else
+        # 如果不为空，则删除所有名称不等于 $APK_NAME 的文件/目录
+        find ./dist -mindepth 1 ! -name "$APK_NAME" -delete
+    fi
+}
+
 function upload() {
     DATE=$(date +%Y-%m-%d)
     ARCHIVE="dist_${DATE}.tar.gz"
@@ -59,9 +70,16 @@ function upload() {
     sshpass -p "$PASSWORD" ssh -p $TARGET_PORT $USER@$TARGET_SERVER "if [ ! -d '$ROOT_PATH/dist' ]; then mkdir -p '$ROOT_PATH/dist'; fi"
     sshpass -p "$PASSWORD" scp -rp "$ARCHIVE" $USER@$TARGET_SERVER:$ROOT_PATH
     commandStr="cd $ROOT_PATH;
+      function delte_dist() {
+          if [ -z \"$APK_NAME\" ]; then
+              find ./dist -mindepth 1 -delete
+          else
+              find ./dist -mindepth 1 ! -name \"$APK_NAME\" -delete
+          fi
+      }
       rm -rf ./dist_new;
       mkdir -p ./dist_new;
-      tar -xaf $ARCHIVE -C ./dist_new --strip-components=1 && find ./dist -mindepth 1 ! -name $APK_NAME -delete && mv -f ./dist_new/* ./dist/";
+      tar -xaf $ARCHIVE -C ./dist_new --strip-components=1 && delte_dist && mv -f ./dist_new/* ./dist/";
     if [ $DELETE_ZIP_FILE ]; then
       commandStr="$commandStr && rm $ARCHIVE";
     fi

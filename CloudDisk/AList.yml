@@ -1,7 +1,7 @@
 name: 'alist'
 services:
   alist:
-    image: 'alist666/alist:latest'
+    image: 'xhofe/alist:latest-ffmpeg'
     container_name: alist
     volumes:
       - './alist:/opt/alist/data'

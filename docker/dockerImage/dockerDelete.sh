@@ -26,7 +26,7 @@ delete_images() {
   repository="${NAME}"
 
   # 获取所有与 repository 匹配的镜像列表
-  images=$(docker images | grep "${repository} " | awk '{print $0}')
+  images=$(docker images --format table | grep "${repository}" | awk '{print $0}')
 
   # 使用 echo 和管道传递字符串给循环
   echo "$images" | while read -r image; do

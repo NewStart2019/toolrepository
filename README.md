@@ -1,21 +1,26 @@
-# ToolRepository
+wg.conf配置文件内容如下：
+[Interface]
+Address = 10.7.0.1/24 # 本机 WireGuard 接口分配的虚拟 IP 地址和子网掩码
+PrivateKey = xxxx=
+ListenPort = 2097 # 本机监听的 UDP 端口
+PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o ens19 -j MASQUERADE
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o ens19 -j MASQUERADE
 
-## 常识
-1、可以使用shellcheck工具检测sh脚本是否错误，以及修正方法。 
-```
-shellcheck xxx.sh
-```
+# 远程对等体（如客户端或另一台服务器）的参数
+[Peer]
+PublicKey = xxxx= # 远程对等体的公钥，用于加密发送给对方的数据
+PresharedKey = xxxx
+AllowedIPs = 10.7.0.2/32 # 定义了哪些 IP 地址的流量可以通过这个对等体进行路由。
 
-## git lsf 使用技巧
+客户都安配置文件内容如下：
+[Interface]
+PrivateKey = xxxx
+Address = 10.7.0.2/24
+DNS = 192.168.8.1, 61.128.128.68, 61.128.192.68
 
-## 问题
-
-### 国外镜像不能下拉问题解决
-    * 在镜像名称前加前缀 docker.m.daocloud.io
-
-## 时区没有设置成功
-    * 添加环境变量 TZ=Asia/Shanghai
-    * 通过挂载的时候：- /etc/localtime:/etc/localtime:ro，确保本地有这个文件，centos默认没有这个文件，下面的命令可以创建
-```shell
-timedatectl set-timezone Asia/Shanghai
-```
+[Peer]
+PublicKey = xxxx
+PresharedKey = xxxx
+AllowedIPs = 10.7.0.1/24, 172.16.0.0/24, 192.168.8.0/24
+Endpoint = 183.66.184.58:2097
+PersistentKeepalive = 25
