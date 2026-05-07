@@ -1,7 +1,7 @@
-name: 'mysql'
+name: 'database'
 services:
-  db:
-    image: 172.16.0.197:8083/mysql:9.2.0-1.el9
+  mysql:
+    image: mysql:9.6.0
     restart: always
     container_name: mysql9
     network_mode: bridge
@@ -27,4 +27,4 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ./data:/var/lib/mysql
       - ./logs:/var/log
-      - ./mysql:/etc/mysql/conf.d
+      - ./mysql/conf.d:/etc/mysql/conf.d

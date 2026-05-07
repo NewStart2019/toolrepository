@@ -1,7 +1,7 @@
 ﻿name: 'iptables-web'
 services:
   iptables-web:
-    image: pretty66/iptables-web:1.1.1
+    image: pretty66/iptables-web:1.1.2
     container_name: iptables-web
     privileged: true
     ports:
