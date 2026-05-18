@@ -63,12 +63,24 @@ function delte_dist() {
 }
 
 function upload() {
+    echo -e "\e[32m 开始上传压缩包…… \e[0m"
     DATE=$(date +%Y-%m-%d)
     ARCHIVE="dist_${DATE}.tar.gz"
     cd $WORK_DIR
     tar -czf "$ARCHIVE" $ZIP_DIR
+    #  检查压缩是否陈工压缩，如果压缩文件不存在则报错
+    if [ ! -f "$ARCHIVE" ]; then
+        echo -e "\e[31m 压缩失败，压缩文件不存在！\e[0m"
+        exit 1
+    fi
     sshpass -p "$PASSWORD" ssh -p $TARGET_PORT $USER@$TARGET_SERVER "if [ ! -d '$ROOT_PATH/dist' ]; then mkdir -p '$ROOT_PATH/dist'; fi"
     sshpass -p "$PASSWORD" scp -rp "$ARCHIVE" $USER@$TARGET_SERVER:$ROOT_PATH
+    # 检测上一条命令是否执行成功
+    if [ $? -ne 0 ]; then
+        echo -e "\e[31m 上传压缩文件失败！\e[0m"
+        exit 1
+    fi
+    echo -e "\e[32m 开始文件迁移…… \e[0m"
     commandStr="cd $ROOT_PATH;
       function delte_dist() {
           if [ -z \"$APK_NAME\" ]; then
@@ -84,6 +96,13 @@ function upload() {
       commandStr="$commandStr && rm $ARCHIVE";
     fi
     sshpass -p "$PASSWORD" ssh -p $TARGET_PORT $USER@$TARGET_SERVER "$commandStr";
+    if [ $? -ne 0 ]; then
+        echo -e "\e[31m 解压部署失败！\e[0m"
+        exit 1
+    fi
+    # 清除本地压缩包文件
+    rm -f $ARCHIVE
+    echo -e "\e[32m 恭喜，部署成功！ \e[0m"
 }
 
 param_check
