@@ -25,20 +25,30 @@ fi
 delete_images() {
   repository="${NAME}"
 
-  # 获取所有与 repository 匹配的镜像列表
-  images=$(docker images --format table | grep "${repository}" | awk '{print $0}')
+  # 1. 使用 Go 模板直接提取完整的镜像名(Repository:Tag)和镜像ID，不包含表头
+  # 注意：这里过滤掉了标签为 <none> 的悬空镜像，如果你需要处理悬空镜像，可以去掉 grep -v "<none>"
+  images=$(docker images --format "{{.Repository}}:{{.Tag}} {{.ID}}" | grep "${repository}" | grep -v "<none>")
 
-  # 使用 echo 和管道传递字符串给循环
-  echo "$images" | while read -r image; do
-    image_tag=$(echo "$image" | awk '{print $2}')
-    image_id=$(echo "$image" | awk '{print $3}')
-    if [ "${image_tag}" != "${VERSION}" ]; then
-      if [ "${image_tag}" = "<none>" ]; then
-        docker rmi $image_id
-      else
-        # 非当前版本的镜像，删除之
-        docker rmi "${repository}:${image_tag}" -f
-      fi
+  # 2. 增加空值检查：如果没有匹配到任何镜像，直接返回，避免执行后续命令报错
+  if [ -z "$images" ]; then
+    echo "未找到需要清理的镜像: ${repository}"
+    return 0
+  fi
+
+  # 3. 循环处理提取出的镜像
+  echo "$images" | while read -r line; do
+    # 提取完整的镜像名 (例如 my-app:v1.0)
+    image_name=$(echo "$line" | awk '{print $1}')
+    # 提取镜像ID
+    image_id=$(echo "$line" | awk '{print $2}')
+    # 从完整镜像名中提取 Tag (例如从 my-app:v1.0 中提取 v1.0)
+    current_tag=$(echo "$image_name" | awk -F: '{print $2}')
+
+    # 如果提取的 tag 不等于当前指定的 VERSION，则执行删除
+    if [ "${current_tag}" != "${VERSION}" ]; then
+      echo "正在删除旧版本镜像: ${image_name}"
+      # 直接使用提取出的完整镜像名进行删除，避免手动拼接出错
+      docker rmi "${image_name}" -f
     fi
   done
 }
