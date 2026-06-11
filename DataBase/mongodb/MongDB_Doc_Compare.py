@@ -1,3 +1,4 @@
+# 使用场景：数据库迁移之后比较数据库的大小和内容是否相同
 # pip install pymongo tabulate
 
 from pymongo import MongoClient
