@@ -20,7 +20,9 @@ services:
     restart: unless-stopped
     network_mode: bridge
     ports:
+      # http
       - "3000:3000"
+      # https
       - "3001:3001"
     environment:
       - PUID=1000

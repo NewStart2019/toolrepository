@@ -40,6 +40,9 @@ RUN dos2unix /app/dockerDelete.sh
 COPY SpringbootHealthCheck.sh /app/
 RUN dos2unix /app/SpringbootHealthCheck.sh
 RUN gradle --version
+
+RUN apk add envsubst
+
 RUN apk del --no-cache wget dos2unix
 
 RUN apk cache clean
