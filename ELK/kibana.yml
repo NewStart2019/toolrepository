@@ -1,0 +1,33 @@
+# =================== Kibana 通用初始化配置 ===================
+# 1. 服务基础配置
+server.shutdownTimeout: "5s"
+server.port: 5601
+server.host: "0.0.0.0"
+#  # 实例名称，便于多节点区分
+server.name: "kibana-log"
+# ⚠️ 生产环境必填，替换为实际访问地址
+server.publicBaseUrl: "http://172.16.0.238:5601"
+# 中文语言设置（8.x 推荐方式）
+i18n.locale: "zh-CN"
+xpack.encryptedSavedObjects.encryptionKey: 848ecf65c0c984a106c237388869d7e8
+xpack.reporting.encryptionKey: ccf237c659a6d3c314fd82e83793d397
+xpack.security.encryptionKey: 3f77a20c85f51b4d5a28fd15b70d239f
+
+# 2. Elasticsearch 连接
+elasticsearch.hosts: ["http://elasticsearch:9200"]
+monitoring.ui.container.elasticsearch.enabled: true
+elasticsearch.requestTimeout: 60000
+xpack.security.enabled: true
+# 替换为 Service Token
+elasticsearch.serviceAccountToken: "AAEAAWVsYXN0aWMva2liYW5hL2tpYmFuYS10b2tlbjpqd0lxVUo2X1RvQzMzT0VkNnRWY21R"
+# 账号面膜的方式
+#elasticsearch.username: "elastic"
+#elasticsearch.password: "kibana_system2026"
+
+# 4. 性能与安全优化
+telemetry.optIn: false           # 关闭遥测数据上报，减少外网请求
+logging.root.level: warn         # 生产环境建议 warn，调试时改为 debug
+xpack.reporting.enabled: true    # 启用报表导出功能（按需开关）
+
+# 5. 索引管理（可选但推荐）
+# kibana.index: ".kibana"          # Kibana 自身元数据索引名，保持默认即可

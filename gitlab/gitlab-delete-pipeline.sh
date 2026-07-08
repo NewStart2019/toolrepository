@@ -3,7 +3,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-GITLAB_URL="http://172.16.0.197:8929"\
+GITLAB_URL="http://172.16.0.197:8929"
 # 注意过期时间是 2027-03-02
 TOKEN="glpat-8SYjaMI8Ezd7o2mi50YZH286MQp1OjIH.01.0w0r79pq1"
 PROJECT_ID="74"
