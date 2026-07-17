@@ -17,6 +17,7 @@ services:
     volumes:
       - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
       - ./logstash/patterns:/usr/share/logstash/patterns:ro
+      - ./logstash/config:/usr/share/logstash/config
     ports:
       - "514:514/udp"  # ⚠️ 避免与宿主机syslog冲突，映射到5514
     depends_on:
