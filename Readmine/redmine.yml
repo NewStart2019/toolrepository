@@ -6,19 +6,53 @@ services:
     network_mode: bridge
     ports:
       - "3000:3000"
+    depends_on:
+      - mariadb
     environment:
       TZ: Asia/Shanghai
       REDMINE_PLUGINS_MIGRATE: "true"
-#      REDMINE_DB_MYSQL: "172.16.0.145:3306"
-#      REDMINE_DB_DATABASE: "redmine"
-#      REDMINE_DB_USERNAME: "root"
-#      REDMINE_DB_PASSWORD: "R_qNhdi5vo"
+      REDMINE_DB_MYSQL: "172.16.0.170"
+      REDMINE_DB_PORT: "13306"
+      REDMINE_DB_DATABASE: "bitnami_redmine"
+      REDMINE_DB_USERNAME: "remine2026"
+      REDMINE_DB_PASSWORD: "a8M?]xmmRw<a-bMeXEAZ"
     volumes:
       - ./plugins:/usr/src/redmine/plugins
-      - ./themes:/usr/src/redmine/public/themes
+      - ./themes:/usr/src/redmine/themes
       - ./files:/usr/src/redmine/files
       - ./temp:/usr/src/redmine/temp
 #      - ./config/:/usr/src/redmine/config
-
+  mariadb:
+    image: mariadb:11.4
+    container_name: mariadb
+    restart: unless-stopped
+    environment:
+      # ✅ 自定义 root 密码（修改此处即可）
+      MARIADB_ROOT_PASSWORD: kGB24PhUmR655WRbzB8vRXUkbdpdkF
+      # 可选：同时创建一个普通数据库和用户
+      MARIADB_DATABASE: bitnami_redmine
+      MARIADB_USER: remine2026
+      MARIADB_PASSWORD: "a8M?]xmmRw<a-bMeXEAZ"
+      # 设置时区，避免时间问题
+      TZ: Asia/Shanghai
+    ports:
+      - "13306:3306"
+    volumes:
+      # 数据持久化（必须挂载，否则容器删除后数据丢失）
+      - ./mariadb_data:/var/lib/mysql
+      #  可选：初始化 SQL 脚本目录（首次启动时自动执行）
+      #      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      # 可选：自定义配置文件目录
+      # - ./conf.d:/etc/mysql/conf.d
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-authentication-plugin=mysql_native_password
+#    healthcheck:
+#      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+#      start_period: 30s
 
 # 启动容器，然后手动去 /usr/src/redmine/config/database.yml 修改数据库配置，第一次登录默认密码admin/admin
