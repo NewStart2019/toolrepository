@@ -21,7 +21,7 @@ services:
       - ./themes:/usr/src/redmine/themes
       - ./files:/usr/src/redmine/files
       - ./temp:/usr/src/redmine/temp
-#      - ./config/:/usr/src/redmine/config
+      - ./config/configuration.yml:/usr/src/redmine/config/configuration.yml
   mariadb:
     image: mariadb:11.4
     container_name: mariadb

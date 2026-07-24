@@ -1,0 +1,16 @@
+.:53 {
+    # 外网域名转发上游公共DNS
+    forward . 223.5.5.5 114.114.114.114 {
+        max_concurrent 1000
+    }
+    cache 60
+    log
+    errors
+}
+
+# 内网自定义域名区域，后缀建议 .lan / .home，不推荐 .local
+lan.:53 {
+    file /etc/coredns/hosts.lan
+    log
+    errors
+}

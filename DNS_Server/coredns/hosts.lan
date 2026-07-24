@@ -1,0 +1,17 @@
+$ORIGIN lan.
+$TTL 300
+@       IN SOA  ns.lan. admin.lan. (
+        2026072401   ; serial (日期+序号，每次修改加1)
+        300          ; refresh
+        180          ; retry
+        604800       ; expire
+        300          ; minimum ttl
+)
+        IN NS   ns.lan.
+
+redmine.cqjdjc     IN A 172.16.0.175
+gitlab.cqjdjc      IN A 172.16.0.197
+svn.cqjdjc         IN A 172.16.0.98
+svn.cqjdjc         IN A 172.16.0.98
+;nas               IN A 172.16.0.60
+;*.dev             IN A 172.16.0.100

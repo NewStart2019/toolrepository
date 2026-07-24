@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  coredns:
+    image: coredns/coredns:latest
+    container_name: coredns
+    restart: unless-stopped
+    # 两种网络模式任选
+    ## 方式1 bridge（推荐，兼容Windows Docker Desktop、Linux，端口映射）
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+    ## 方式2 host网络（Linux宿主机最优，注释上面ports再启用）
+    network_mode: host
+    volumes:
+      - ./Corefile:/etc/coredns/Corefile:ro
+      - ./hosts.lan:/etc/coredns/hosts.lan:ro
+    command: -conf /etc/coredns/Corefile

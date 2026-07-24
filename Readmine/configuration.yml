@@ -1,0 +1,11 @@
+default:
+  email_delivery:
+    delivery_method: :smtp
+    smtp_settings:
+      address: "smtp.qq.com"
+      port: 465
+      domain: "smtp.qq.com"
+      authentication: :login
+      user_name: "1214576057@qq.com"
+      password: "fjojojhnuitpbaai"
+  avatar_server_url: https://seccdn.libravatar.org
