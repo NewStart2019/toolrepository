@@ -1,4 +1,6 @@
 @echo off
+:: 强制切换控制台为GBK编码，解决不同系统代码页不一致导致的乱码
+>nul chcp 936
 setlocal enabledelayedexpansion
 
 :: ==============================================
