@@ -51,7 +51,7 @@ function param_check() {
   fi
 }
 
-function delte_dist() {
+function delete_dist() {
     # 检查 APK_NAME 变量是否为空
     if [ -z "$APK_NAME" ]; then
         # 如果为空，则删除 dist 目录下的所有内容
@@ -82,7 +82,7 @@ function upload() {
     fi
     echo -e "\e[32m 开始文件迁移…… \e[0m"
     commandStr="cd $ROOT_PATH;
-      function delte_dist() {
+      function delete_dist() {
           if [ -z \"$APK_NAME\" ]; then
               find ./dist -mindepth 1 -delete
           else
@@ -91,7 +91,7 @@ function upload() {
       }
       rm -rf ./dist_new;
       mkdir -p ./dist_new;
-      tar -xaf $ARCHIVE -C ./dist_new --strip-components=1 && delte_dist && mv -f ./dist_new/* ./dist/";
+      tar -xaf $ARCHIVE -C ./dist_new --strip-components=1 && delete_dist && mv -f ./dist_new/* ./dist/";
     if [ $DELETE_ZIP_FILE ]; then
       commandStr="$commandStr && rm $ARCHIVE";
     fi
@@ -106,5 +106,7 @@ function upload() {
 }
 
 param_check
-ssh-keyscan -t rsa $TARGET_SERVER >> /root/.ssh/known_hosts
+SSH_KNOWN_HOSTS="$HOME/.ssh/known_hosts"
+mkdir -p "$HOME/.ssh"
+ssh-keyscan -t rsa "$TARGET_SERVER" >> "$SSH_KNOWN_HOSTS"
 upload
