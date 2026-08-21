@@ -18,8 +18,10 @@ elasticsearch.hosts: ["http://elasticsearch:9200"]
 monitoring.ui.container.elasticsearch.enabled: true
 elasticsearch.requestTimeout: 60000
 xpack.security.enabled: true
-# 替换为 Service Token
-elasticsearch.serviceAccountToken: "AAEAAWVsYXN0aWMva2liYW5hL2tpYmFuYS10b2tlbjpqd0lxVUo2X1RvQzMzT0VkNnRWY21R"
+# 替换为 Service Token security_exception: failed to authenticate service account [elastic/kibana] with token name [kibana-token]
+# 进入 ES 容器或 bin 目录
+# elasticsearch-service-tokens create elastic/kibana kibana-token
+elasticsearch.serviceAccountToken: "AAEAAWVsYXN0aWMva2liYW5hL2tpYmFuYS10b2tlbjo3LWUxZDVvSFE0dTF2NlQ1bTJCMmNn"
 # 账号面膜的方式
 #elasticsearch.username: "elastic"
 #elasticsearch.password: "kibana_system2026"
