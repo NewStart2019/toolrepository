@@ -1,9 +1,12 @@
-name: gitlab-runner
+name: gitlab
 services:
   gitlab-runner:
-    image: 'gitlab/gitlab-runner:latest'
+    image: 'gitlab/gitlab-runner:v18.5.0'
     container_name: gitlab-runner
-    network_mode: bridge
+    restart: unless-stopped
     volumes:
-      - '/app/gitlab/gitlab-runner/config:/etc/gitlab-runner'
-      - '/var/run/docker.sock:/var/run/docker.sock'
+      - './gitlab-runner/config:/etc/gitlab-runner'
+      - '/run/docker.sock:/var/run/docker.sock'
+      - "/root/.docker/buildx:/root/.docker/buildx"
+      # 重点：加上这一行，缓存永久保存！
+#      - ./gitlab-runner/gitlab-runner-cache:/home/gitlab-runner/cache
