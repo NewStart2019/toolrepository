@@ -20,3 +20,9 @@ reboot
 modprobe xt_addrtype
 modprobe br_netfilter
 modprobe nf_nat
+
+
+#CentOS8 默认自带 `podman、buildah、runc`（系统 module 容器组件），**`containerd.io` 和系统自带的 runc 冲突**，这是 CentOS8 装官方 Docker 的经典坑。
+# podman/buildah/ 系统 runc 和 docker-ce 的 containerd.io 不能共存，二选一。
+# 卸载冲突包
+dnf remove -y podman buildah runc
